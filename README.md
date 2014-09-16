@@ -23,6 +23,32 @@ For steps to create a certificate and export to Azure visit http://gauravmantri.
 
 <b>config-file</b> : yml file where we define the Azure Service Bus configurations<br/>
 
+example yml configuration
+   ```
+   # Azure Service Bus particulars
+    azure:
+    subscriptionId: "{SubscriptionId}"
+    keyStoreLocation: "{KeyStoreLocation}"
+    keyStorePassword: "{KeyStorePath}"
+    
+    # Azure Service Bus Namespaces
+    namespaces:
+    - namespace: "{NameSpace}"
+      queueStats: [size,incoming,outgoing,length,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
+      excludeQueues: []
+      topicStats: [size,incoming,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
+      excludeTopics: []
+    - namespace: "{NameSpace}"
+      queueStats: [size,incoming,outgoing,length,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
+      excludeQueues: []
+      topicStats: [size,incoming,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
+      excludeTopics: []
+    
+    #prefix used to show up metrics in AppDynamics
+    metricPrefix: "Custom Metrics|Azure Service Bus|"
+   
+   ```
+
 
 ##Metrics
 The following metrics are reported.
