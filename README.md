@@ -81,7 +81,7 @@ The following metrics are reported.
 |Azure Service Bus/{NameSpace}/Topics/{TopicName}/Total Requests|
 
 #Custom Dashboard
-![]()
+![](https://raw.githubusercontent.com/Appdynamics/azure-servicebus-monitoring-extension/master/azure-service-bus-dashboard.png)
 
 ##Contributing
 
