@@ -93,4 +93,4 @@ Find out more in the [AppSphere]() community.
 
 ##Support
 
-For any questions or feature request, please contact [AppDynamics Center of Excellence](mailto:ace-request@appdynamics.com).
+For any questions or feature request, please contact [AppDynamics Center of Excellence](mailto:help@appdynamics.com).
