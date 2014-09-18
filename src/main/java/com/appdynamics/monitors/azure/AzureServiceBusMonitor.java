@@ -44,15 +44,15 @@ public class AzureServiceBusMonitor extends AManagedMonitor {
             try {
                 Configuration config = configUtil.readConfig(configFilename, Configuration.class);
                 collectAndPrintMetrics(config);
-                logger.info("Completed the GlassFish Monitoring Task successfully");
-                return new TaskOutput("GlassFish Monitor executed successfully");
+                logger.info("Completed the AzureServiceBus Monitoring Task successfully");
+                return new TaskOutput("AzureServiceBus Monitor executed successfully");
             } catch (FileNotFoundException e) {
                 logger.error("Config File not found: " + configFilename, e);
             } catch (Exception e) {
                 logger.error("Metrics Collection Failed: ", e);
             }
         }
-        throw new TaskExecutionException("GlassFish Monitor completed with failures");
+        throw new TaskExecutionException("AzureServiceBus Monitor completed with failures");
     }
 
     private void collectAndPrintMetrics(Configuration config) throws TaskExecutionException {
