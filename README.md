@@ -14,7 +14,7 @@ For steps to create a certificate and export to Azure visit http://gauravmantri.
 ##Installation
 
 1. Run "mvn clean install"
-2. Download and unzip the file 'target/AzureServiceBusMonitor.zip' to \<machineagent install dir\}/monitors
+2. Download and unzip the file 'target/AzureServiceBusMonitor.zip' to \{machineagent install dir\}/monitors
 3. Open <b>monitor.xml</b> and configure the Azure arguments
 
 <pre>
