@@ -26,6 +26,15 @@ For steps to create a certificate and export to Azure visit http://gauravmantri.
 example yml configuration
    ```
    # Azure Service Bus particulars
+   
+
+    # Number of threads to parallely execute Namespace requests to fetch Queue names and Topic names
+    namespaceThreads: 5
+    # Number of threads to parallely execute Queue stats request
+    queueThreads: 5
+    # Number of threads to parallely execute Topic stats request
+    topicThreads: 5
+
     azure:
     subscriptionId: "{SubscriptionId}"
     keyStoreLocation: "{KeyStoreLocation}"
