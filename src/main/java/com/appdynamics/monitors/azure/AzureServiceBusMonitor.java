@@ -1,10 +1,33 @@
+/**
+ * Copyright 2014 AppDynamics, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.appdynamics.monitors.azure;
 
 import com.appdynamics.extensions.PathResolver;
-import com.appdynamics.monitors.azure.config.*;
+import com.appdynamics.monitors.azure.config.Azure;
+import com.appdynamics.monitors.azure.config.ConfigUtil;
+import com.appdynamics.monitors.azure.config.Configuration;
+import com.appdynamics.monitors.azure.config.Namespace;
 import com.appdynamics.monitors.azure.statsCollector.AzureServiceBusStatsCollector;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.singularity.ee.agent.systemagent.api.AManagedMonitor;
 import com.singularity.ee.agent.systemagent.api.MetricWriter;
 import com.singularity.ee.agent.systemagent.api.TaskExecutionContext;
@@ -18,6 +41,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
 
 public class AzureServiceBusMonitor extends AManagedMonitor {
 
@@ -55,62 +80,75 @@ public class AzureServiceBusMonitor extends AManagedMonitor {
         throw new TaskExecutionException("AzureServiceBus Monitor completed with failures");
     }
 
-    private void collectAndPrintMetrics(Configuration config) throws TaskExecutionException {
-        Azure azure = config.getAzure();
-        String metricPrefix = config.getMetricPrefix();
+    private void collectAndPrintMetrics(final Configuration config) throws TaskExecutionException {
+        final Azure azure = config.getAzure();
+        final String metricPrefix = config.getMetricPrefix();
         List<Namespace> namespaces = config.getNamespaces();
         if (namespaces == null || namespaces.isEmpty()) {
             logger.info("No namespaces configured. Please configure namespaces in config.yml file to get stats");
             return;
         }
-        for (Namespace namespace : namespaces) {
-            String namespaceName = namespace.getNamespace();
-            Set<String> queueNames = getQueueNames(config, namespaceName, namespace.getExcludeQueues());
-            Set<String> topicNames = getTopicNames(config, namespaceName, namespace.getExcludeTopics());
-            if (Strings.isNullOrEmpty(namespaceName)) {
-                logger.info("No value for namespaces in configuration. Ignoring the entry");
-                continue;
-            }
 
-            TaskExecutionException queueError = null;
-            TaskExecutionException topicError = null;
-            boolean queueStatsCollected = false;
-            boolean topicStatsCollected = false;
-            if (queueNames != null && !queueNames.isEmpty()) {
-                try {
-                    Map<String, String> queueStats = azureServiceBusStatsCollector.collectQueueStats(azure, namespaceName, queueNames, namespace.getQueueStats());
-                    printMetrics(queueStats, metricPrefix);
-                    queueStatsCollected = true;
-                } catch (TaskExecutionException e) {
-                    queueStatsCollected = false;
-                    queueError = e;//Hold the exception until the process finishes execution
+        ListeningExecutorService namespaceService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(config.getNamespaceThreads()));
+        try {
+            for (final Namespace namespace : namespaces) {
+
+                final String namespaceName = namespace.getNamespace();
+                if (Strings.isNullOrEmpty(namespaceName)) {
+                    logger.info("No value for namespaces in configuration. Ignoring the entry");
+                    continue;
                 }
-            }
 
-            if (topicNames != null && !topicNames.isEmpty()) {
-                try {
-                    Map<String, String> topicStats = azureServiceBusStatsCollector.collectTopicStats(azure, namespaceName, topicNames, namespace.getTopicStats());
-                    printMetrics(topicStats, metricPrefix);
-                    topicStatsCollected = true;
-                } catch (TaskExecutionException e) {
-                    topicStatsCollected = false;
-                    topicError = e;//Hold the exception until the process finishes execution
-                }
-            }
+                //Queue Stats
+                ListenableFuture<Set<String>> getQueueNames = namespaceService.submit(new Callable<Set<String>>() {
+                    public Set<String> call() {
+                        return getQueueNames(config, namespaceName, namespace.getExcludeQueues());
+                    }
+                });
 
-            if (queueStatsCollected || topicStatsCollected) {
-                print(metricPrefix + AzureServiceBusMonitorConstants.METRICS_COLLECTED, AzureServiceBusMonitorConstants.SUCCESS_VALUE);
-            } else {
-                print(metricPrefix + AzureServiceBusMonitorConstants.METRICS_COLLECTED, AzureServiceBusMonitorConstants.ERROR_VALUE);
-            }
+                Futures.addCallback(getQueueNames, new FutureCallback<Set<String>>() {
+                    public void onSuccess(Set<String> queueNames) {
+                        if (queueNames != null && !queueNames.isEmpty()) {
+                            try {
+                                Map<String, String> queueStats = azureServiceBusStatsCollector.collectQueueStats(azure, namespaceName, queueNames, namespace.getQueueStats(), config.getQueueThreads());
+                                printMetrics(queueStats, metricPrefix);
+                            } catch (TaskExecutionException e) {
+                                logger.error("Unable to get queue stats for namespace [" + namespaceName, e);
+                            }
+                        }
+                    }
 
-            //Check the errors and throw if any
-            if (queueError != null) {
-                throw queueError;
-            } else if (topicError != null) {
-                throw topicError;
-            }
+                    public void onFailure(Throwable thrown) {
+                        logger.error("Unable to get queues for namespace [" + namespaceName, thrown);
+                    }
+                });
 
+                //Topic stats
+                ListenableFuture<Set<String>> getTopicNames = namespaceService.submit(new Callable<Set<String>>() {
+                    public Set<String> call() {
+                        return getTopicNames(config, namespaceName, namespace.getExcludeTopics());
+                    }
+                });
+
+                Futures.addCallback(getTopicNames, new FutureCallback<Set<String>>() {
+                    public void onSuccess(Set<String> topicNames) {
+                        if (topicNames != null && !topicNames.isEmpty()) {
+                            try {
+                                Map<String, String> topicStats = azureServiceBusStatsCollector.collectTopicStats(azure, namespaceName, topicNames, namespace.getTopicStats(), config.getTopicThreads());
+                                printMetrics(topicStats, metricPrefix);
+                            } catch (TaskExecutionException e) {
+                                logger.error("Unable to get topic stats for namespace [" + namespaceName, e);
+                            }
+                        }
+                    }
+
+                    public void onFailure(Throwable thrown) {
+                        logger.error("Unable to get topics for namespace [" + namespaceName, thrown);
+                    }
+                });
+            }
+        } finally {
+            namespaceService.shutdown();
         }
     }
 

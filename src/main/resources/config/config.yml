@@ -1,18 +1,30 @@
 # Azure Service Bus particulars
 
+# Number of threads to parallely execute Namespace requests to fetch Queue names and Topic names
+namespaceThreads: 5
+# Number of threads to parallely execute Queue stats request
+queueThreads: 5
+# Number of threads to parallely execute Topic stats request
+topicThreads: 5
+
 azure:
-    subscriptionId: "{SubscriptionId}"
-    keyStoreLocation: "{KeyStoreLocation}"
-    keyStorePassword: "{KeyStorePath}"
+    subscriptionId: "4814ab8f-ebb8-42b5-ac5c-69b675d19e2c"
+    keyStoreLocation: "/home/satish/AppDynamics/Azure/WindowsAzureKeyStore.jks"
+    keyStorePassword: "appdAzure123"
 
 # Azure Service Bus Namespaces
 namespaces:
-    -   namespace: "{NameSpace}"
+    -   namespace: "AlexTest01"
         queueStats: [size,incoming,outgoing,length,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
         excludeQueues: []
         topicStats: [size,incoming,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
         excludeTopics: []
-    -   namespace: "{NameSpace}"
+    -   namespace: "AppDySB"
+        queueStats: [size,incoming,outgoing,length,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
+        excludeQueues: []
+        topicStats: [size,incoming,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
+        excludeTopics: []
+    -   namespace: "raunak-test"
         queueStats: [size,incoming,outgoing,length,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
         excludeQueues: []
         topicStats: [size,incoming,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]

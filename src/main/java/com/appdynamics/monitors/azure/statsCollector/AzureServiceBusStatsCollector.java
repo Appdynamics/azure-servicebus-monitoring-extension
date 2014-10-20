@@ -1,11 +1,35 @@
+/**
+ * Copyright 2014 AppDynamics, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.appdynamics.monitors.azure.statsCollector;
 
 import com.appdynamics.monitors.azure.AzureServiceBusMonitor;
 import com.appdynamics.monitors.azure.config.Azure;
 import com.appdynamics.monitors.azure.config.Configuration;
-import com.appdynamics.monitors.azure.metrics.*;
+import com.appdynamics.monitors.azure.metrics.Entry;
+import com.appdynamics.monitors.azure.metrics.Feed;
+import com.appdynamics.monitors.azure.metrics.MetricValue;
+import com.appdynamics.monitors.azure.metrics.MetricValueSet;
+import com.appdynamics.monitors.azure.metrics.MetricValueSetCollection;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.singularity.ee.agent.systemagent.api.exception.TaskExecutionException;
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.lang.text.StrSubstitutor;
@@ -25,9 +49,22 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
-import java.security.*;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 public class AzureServiceBusStatsCollector {
 
@@ -45,24 +82,53 @@ public class AzureServiceBusStatsCollector {
     private static final String STAT_URL = "https://management.core.windows.net/${SubscriptionId}/services/monitoring/metricvalues/query?resourceId=/servicebus/namespaces/${NameSpace}/${ResourceType}/${ResourceName}&names=${Stats}&timeGrain=PT5M&startTime=${StartTime}&endTime=${EndTime}";
     private static final String RESOURCE_NAMES_URL = "https://management.core.windows.net/${SubscriptionId}/services/servicebus/Namespaces/${NameSpace}/${ResourceType}";
 
-    public Map<String, String> collectQueueStats(Azure azure, String namespaceName, Set<String> queueNames, Set<String> queueStats) throws TaskExecutionException {
+    public Map<String, String> collectQueueStats(final Azure azure, final String namespaceName, Set<String> queueNames, Set<String> queueStats, int queueThreads) throws TaskExecutionException {
 
-        Map<String, String> metricMap = new HashMap<String, String>();
-        Map<String, String> valueMap = createValueMap(azure, namespaceName, QUEUES, queueStats);
+        final Map<String, String> valueMap = createValueMap(azure, namespaceName, QUEUES, queueStats);
 
-        for (String queueName : queueNames) {
-            valueMap.put("ResourceName", queueName);
-            try {
-                getStatsFromAzure(azure, namespaceName, valueMap, queueName, QUEUES, metricMap);
-            } catch (Exception e) {
-                logger.error("Error getting stats for queue [" + namespaceName + "/" + queueName + "]", e);
-                throw new TaskExecutionException("Error getting stats for queue [" + namespaceName + "/" + queueName + "]", e);
+        ListeningExecutorService queueService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(queueThreads));
+        final Map<String, String> queueMetricMap = new HashMap<String, String>();
+        final CountDownLatch countDownLatch = new CountDownLatch(queueNames.size());
+
+        try {
+            for (final String queueName : queueNames) {
+                valueMap.put("ResourceName", queueName);
+                try {
+                    ListenableFuture<Map<String, String>> getQueueNames = queueService.submit(new Callable<Map<String, String>>() {
+                        public Map<String, String> call() throws IOException {
+                            return getStatsFromAzure(azure, namespaceName, valueMap, queueName, QUEUES);
+                        }
+                    });
+
+                    Futures.addCallback(getQueueNames, new FutureCallback<Map<String, String>>() {
+                        public void onSuccess(Map<String, String> queueStats) {
+                            countDownLatch.countDown();
+                            queueMetricMap.putAll(queueStats);
+                        }
+
+                        public void onFailure(Throwable thrown) {
+                            countDownLatch.countDown();
+                            logger.error("Unable to get stats for queue [" + queueName + "] in namespace [" + namespaceName + "]", thrown);
+                        }
+                    });
+
+                } catch (Exception e) {
+                    logger.error("Error getting stats for queue [" + namespaceName + "/" + queueName + "]", e);
+                    throw new TaskExecutionException("Error getting stats for queue [" + namespaceName + "/" + queueName + "]", e);
+                }
             }
+        } finally {
+            queueService.shutdown();
         }
-        return metricMap;
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            logger.error("Unable to wait till getting the queue stats", e);
+        }
+        return queueMetricMap;
     }
 
-    private void getStatsFromAzure(Azure azure, String namespaceName, Map<String, String> valueMap, String resourceName, String resourceType, Map<String, String> metricMap) throws IOException {
+    private Map<String, String> getStatsFromAzure(Azure azure, String namespaceName, Map<String, String> valueMap, String resourceName, String resourceType) throws IOException {
         StrSubstitutor strSubstitutor = new StrSubstitutor(valueMap);
         String statsUrlString = strSubstitutor.replace(STAT_URL);
         URL statsUrl = new URL(statsUrlString);
@@ -76,24 +142,53 @@ public class AzureServiceBusStatsCollector {
         xstream.processAnnotations(MetricValue.class);
         MetricValueSetCollection metricValueSetCollection = (MetricValueSetCollection) xstream.fromXML(is);
 
-        metricMap.putAll(extractMetrics(metricValueSetCollection, namespaceName, resourceType, resourceName));
+        return extractMetrics(metricValueSetCollection, namespaceName, resourceType, resourceName);
     }
 
-    public Map<String, String> collectTopicStats(Azure azure, String namespaceName, Set<String> topicNames, Set<String> topicStats) throws TaskExecutionException {
+    public Map<String, String> collectTopicStats(final Azure azure, final String namespaceName, Set<String> topicNames, Set<String> topicStats, int topicThreads) throws TaskExecutionException {
 
-        Map<String, String> metricMap = new HashMap<String, String>();
-        Map<String, String> valueMap = createValueMap(azure, namespaceName, TOPICS, topicStats);
+        final Map<String, String> valueMap = createValueMap(azure, namespaceName, TOPICS, topicStats);
 
-        for (String topicName : topicNames) {
-            valueMap.put("ResourceName", topicName);
-            try {
-                getStatsFromAzure(azure, namespaceName, valueMap, topicName, TOPICS, metricMap);
-            } catch (Exception e) {
-                logger.error("Error getting stats for topic [" + namespaceName + "/" + topicName + "]", e);
-                throw new TaskExecutionException("Error getting stats for topic [" + namespaceName + "/" + topicName + "]", e);
+        ListeningExecutorService topicService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(topicThreads));
+        final Map<String, String> topicMetricMap = new ConcurrentHashMap<String, String>();
+        final CountDownLatch countDownLatch = new CountDownLatch(topicNames.size());
+
+        try {
+            for (final String topicName : topicNames) {
+                valueMap.put("ResourceName", topicName);
+                try {
+                    ListenableFuture<Map<String, String>> getQueueNames = topicService.submit(new Callable<Map<String, String>>() {
+                        public Map<String, String> call() throws IOException {
+                            return getStatsFromAzure(azure, namespaceName, valueMap, topicName, TOPICS);
+                        }
+                    });
+
+                    Futures.addCallback(getQueueNames, new FutureCallback<Map<String, String>>() {
+                        public void onSuccess(Map<String, String> queueStats) {
+                            countDownLatch.countDown();
+                            topicMetricMap.putAll(queueStats);
+                        }
+
+                        public void onFailure(Throwable thrown) {
+                            countDownLatch.countDown();
+                            logger.error("Unable to get stats for topic [" + topicName + "] in namespace [" + namespaceName + "]", thrown);
+                        }
+                    });
+                } catch (Exception e) {
+                    logger.error("Error getting stats for topic [" + namespaceName + "/" + topicName + "]", e);
+                    throw new TaskExecutionException("Error getting stats for topic [" + namespaceName + "/" + topicName + "]", e);
+                }
             }
+        } finally {
+            topicService.shutdown();
         }
-        return metricMap;
+
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            logger.error("Unable to wait till getting the topic stats", e);
+        }
+        return topicMetricMap;
     }
 
     private Map<String, String> createValueMap(Azure azure, String namespaceName, String resourceType, Set<String> queueStats) {
@@ -240,7 +335,6 @@ public class AzureServiceBusStatsCollector {
         } catch (MalformedURLException e) {
             logger.error("Error getting topic names for [" + namespaceName + "]", e);
         }
-
         return Sets.newHashSet();
     }
 
@@ -278,6 +372,5 @@ public class AzureServiceBusStatsCollector {
             logger.error("Error getting queue names for [" + namespaceName + "]", e);
         }
         return Sets.newHashSet();
-
     }
 }

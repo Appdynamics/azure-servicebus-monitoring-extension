@@ -22,6 +22,9 @@ public class Configuration {
     private Azure azure;
     private List<Namespace> namespaces;
     private String metricPrefix;
+    private int namespaceThreads;
+    private int queueThreads;
+    private int topicThreads;
 
     public Azure getAzure() {
         return azure;
@@ -45,5 +48,29 @@ public class Configuration {
 
     public void setMetricPrefix(String metricPrefix) {
         this.metricPrefix = metricPrefix;
+    }
+
+    public int getNamespaceThreads() {
+        return namespaceThreads;
+    }
+
+    public void setNamespaceThreads(int namespaceThreads) {
+        this.namespaceThreads = namespaceThreads;
+    }
+
+    public int getQueueThreads() {
+        return queueThreads;
+    }
+
+    public void setQueueThreads(int queueThreads) {
+        this.queueThreads = queueThreads;
+    }
+
+    public int getTopicThreads() {
+        return topicThreads;
+    }
+
+    public void setTopicThreads(int topicThreads) {
+        this.topicThreads = topicThreads;
     }
 }
