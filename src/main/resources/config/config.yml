@@ -8,23 +8,13 @@ queueThreads: 5
 topicThreads: 5
 
 azure:
-    subscriptionId: "4814ab8f-ebb8-42b5-ac5c-69b675d19e2c"
-    keyStoreLocation: "/home/satish/AppDynamics/Azure/WindowsAzureKeyStore.jks"
-    keyStorePassword: "appdAzure123"
+    subscriptionId: "4a19b866-6e53-4f09-89e3-46b3735e0a08"
+    keyStoreLocation: "/Users/Muddam/AppDynamics/dummy/WindowsAzureKeyStore.jks"
+    keyStorePassword: "test123"
 
 # Azure Service Bus Namespaces
 namespaces:
-    -   namespace: "AlexTest01"
-        queueStats: [size,incoming,outgoing,length,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
-        excludeQueues: []
-        topicStats: [size,incoming,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
-        excludeTopics: []
-    -   namespace: "AppDySB"
-        queueStats: [size,incoming,outgoing,length,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
-        excludeQueues: []
-        topicStats: [size,incoming,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
-        excludeTopics: []
-    -   namespace: "raunak-test"
+    -   namespace: "appdservicebus"
         queueStats: [size,incoming,outgoing,length,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]
         excludeQueues: []
         topicStats: [size,incoming,requests.total,requests.successful,requests.failed,requests.failed.internalservererror,requests.failed.serverbusy,requests.failed.other]

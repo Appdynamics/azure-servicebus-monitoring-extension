@@ -1,12 +1,12 @@
 /**
  * Copyright 2014 AppDynamics, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.singularity.ee.agent.systemagent.api.MetricWriter;
 import com.singularity.ee.agent.systemagent.api.exception.TaskExecutionException;
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.lang.text.StrSubstitutor;
@@ -61,8 +62,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 
@@ -70,40 +69,44 @@ public class AzureServiceBusStatsCollector {
 
     private static final Logger logger = Logger.getLogger(AzureServiceBusStatsCollector.class);
 
-    public static final String REQUEST_METHOD_GET = "GET";
-    public static final String X_MS_VERSION_HEADER = "x-ms-version";
+    private final AzureServiceBusMonitor monitor;
 
-    public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
-    public static final String X_MS_VERSION = "2013-11-01";
+    private static final String REQUEST_METHOD_GET = "GET";
+    private static final String X_MS_VERSION_HEADER = "x-ms-version";
+
+    private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    private static final String X_MS_VERSION = "2013-11-01";
 
     private static final String QUEUES = "Queues";
     private static final String TOPICS = "Topics";
 
     private static final String STAT_URL = "https://management.core.windows.net/${SubscriptionId}/services/monitoring/metricvalues/query?resourceId=/servicebus/namespaces/${NameSpace}/${ResourceType}/${ResourceName}&names=${Stats}&timeGrain=PT5M&startTime=${StartTime}&endTime=${EndTime}";
     private static final String RESOURCE_NAMES_URL = "https://management.core.windows.net/${SubscriptionId}/services/servicebus/Namespaces/${NameSpace}/${ResourceType}";
+    private String metricPrefix;
 
-    public Map<String, String> collectQueueStats(final Azure azure, final String namespaceName, Set<String> queueNames, Set<String> queueStats, int queueThreads) throws TaskExecutionException {
+    public AzureServiceBusStatsCollector(AzureServiceBusMonitor monitor) {
+        this.monitor = monitor;
+    }
+
+    public void collectQueueStats(final Azure azure, final String namespaceName, Set<String> queueNames, Set<String> queueStats, int queueThreads) throws TaskExecutionException {
 
         final Map<String, String> valueMap = createValueMap(azure, namespaceName, QUEUES, queueStats);
 
         ListeningExecutorService queueService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(queueThreads));
-        final Map<String, String> queueMetricMap = new HashMap<String, String>();
         final CountDownLatch countDownLatch = new CountDownLatch(queueNames.size());
 
         try {
             for (final String queueName : queueNames) {
-                valueMap.put("ResourceName", queueName);
                 try {
-                    ListenableFuture<Map<String, String>> getQueueNames = queueService.submit(new Callable<Map<String, String>>() {
-                        public Map<String, String> call() throws IOException {
-                            return getStatsFromAzure(azure, namespaceName, valueMap, queueName, QUEUES);
+                    ListenableFuture getQueueNames = queueService.submit(new Runnable() {
+                        public void run() {
+                            getStatsFromAzure(azure, namespaceName, valueMap, queueName, QUEUES);
                         }
                     });
 
-                    Futures.addCallback(getQueueNames, new FutureCallback<Map<String, String>>() {
-                        public void onSuccess(Map<String, String> queueStats) {
+                    Futures.addCallback(getQueueNames, new FutureCallback<Void>() {
+                        public void onSuccess(Void nothing) {
                             countDownLatch.countDown();
-                            queueMetricMap.putAll(queueStats);
                         }
 
                         public void onFailure(Throwable thrown) {
@@ -125,13 +128,20 @@ public class AzureServiceBusStatsCollector {
         } catch (InterruptedException e) {
             logger.error("Unable to wait till getting the queue stats", e);
         }
-        return queueMetricMap;
     }
 
-    private Map<String, String> getStatsFromAzure(Azure azure, String namespaceName, Map<String, String> valueMap, String resourceName, String resourceType) throws IOException {
+    private void getStatsFromAzure(Azure azure, String namespaceName, Map<String, String> valueMap, String resourceName, String resourceType) {
+
+        valueMap.put("ResourceName", resourceName);
         StrSubstitutor strSubstitutor = new StrSubstitutor(valueMap);
         String statsUrlString = strSubstitutor.replace(STAT_URL);
-        URL statsUrl = new URL(statsUrlString);
+        URL statsUrl = null;
+        try {
+            statsUrl = new URL(statsUrlString);
+        } catch (MalformedURLException e) {
+            logger.error("Unable to build URL from [ " + statsUrlString + " ]");
+            return;
+        }
 
         InputStream is = processGetRequest(statsUrl, azure.getKeyStoreLocation(), azure.getKeyStorePassword());
 
@@ -142,31 +152,32 @@ public class AzureServiceBusStatsCollector {
         xstream.processAnnotations(MetricValue.class);
         MetricValueSetCollection metricValueSetCollection = (MetricValueSetCollection) xstream.fromXML(is);
 
-        return extractMetrics(metricValueSetCollection, namespaceName, resourceType, resourceName);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Response from URL [ " + statsUrlString + " ] is [ " + xstream.toXML(metricValueSetCollection) + " ]");
+        }
+        extractMetrics(metricValueSetCollection, namespaceName, resourceType, resourceName);
     }
 
-    public Map<String, String> collectTopicStats(final Azure azure, final String namespaceName, Set<String> topicNames, Set<String> topicStats, int topicThreads) throws TaskExecutionException {
+    public void collectTopicStats(final Azure azure, final String namespaceName, Set<String> topicNames, Set<String> topicStats, int topicThreads) throws TaskExecutionException {
 
         final Map<String, String> valueMap = createValueMap(azure, namespaceName, TOPICS, topicStats);
 
         ListeningExecutorService topicService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(topicThreads));
-        final Map<String, String> topicMetricMap = new ConcurrentHashMap<String, String>();
         final CountDownLatch countDownLatch = new CountDownLatch(topicNames.size());
 
         try {
             for (final String topicName : topicNames) {
                 valueMap.put("ResourceName", topicName);
                 try {
-                    ListenableFuture<Map<String, String>> getQueueNames = topicService.submit(new Callable<Map<String, String>>() {
-                        public Map<String, String> call() throws IOException {
-                            return getStatsFromAzure(azure, namespaceName, valueMap, topicName, TOPICS);
+                    ListenableFuture getQueueNames = topicService.submit(new Runnable() {
+                        public void run() {
+                            getStatsFromAzure(azure, namespaceName, valueMap, topicName, TOPICS);
                         }
                     });
 
-                    Futures.addCallback(getQueueNames, new FutureCallback<Map<String, String>>() {
-                        public void onSuccess(Map<String, String> queueStats) {
+                    Futures.addCallback(getQueueNames, new FutureCallback<Void>() {
+                        public void onSuccess(Void nothing) {
                             countDownLatch.countDown();
-                            topicMetricMap.putAll(queueStats);
                         }
 
                         public void onFailure(Throwable thrown) {
@@ -188,7 +199,6 @@ public class AzureServiceBusStatsCollector {
         } catch (InterruptedException e) {
             logger.error("Unable to wait till getting the topic stats", e);
         }
-        return topicMetricMap;
     }
 
     private Map<String, String> createValueMap(Azure azure, String namespaceName, String resourceType, Set<String> queueStats) {
@@ -200,7 +210,7 @@ public class AzureServiceBusStatsCollector {
         String stats = Joiner.on(",").skipNulls().join(queueStats);
         valueMap.put("Stats", stats);
 
-        DateTime dateTime = new DateTime(DateTimeZone.UTC).minusMinutes(15);
+        DateTime dateTime = new DateTime(DateTimeZone.UTC).minusMinutes(25);
         String endTime = dateTime.toString(DateTimeFormat.forPattern(DATE_FORMAT));
         String startTime = dateTime.minusMinutes(1).toString(DateTimeFormat.forPattern(DATE_FORMAT));
         valueMap.put("StartTime", startTime);
@@ -208,7 +218,7 @@ public class AzureServiceBusStatsCollector {
         return valueMap;
     }
 
-    private Map<String, String> extractMetrics(MetricValueSetCollection metricValueSetCollection, String namespaceName, String resourceType, String resourceName) {
+    private void extractMetrics(MetricValueSetCollection metricValueSetCollection, String namespaceName, String resourceType, String resourceName) {
         Map<String, String> metrics = new HashMap<String, String>();
         List<MetricValueSet> metricValueSets = metricValueSetCollection.getMetricValueSets();
         for (MetricValueSet metricValueSet : metricValueSets) {
@@ -235,7 +245,7 @@ public class AzureServiceBusStatsCollector {
             }
             metrics.put(keyBuilder.toString(), value);
         }
-        return metrics;
+        printMetrics(metrics, metricPrefix);
     }
 
     private InputStream processGetRequest(URL url, String keyStore, String keyStorePassword) {
@@ -347,6 +357,11 @@ public class AzureServiceBusStatsCollector {
         StrSubstitutor strSubstitutor = new StrSubstitutor(valueMap);
         String resourceNamesUrlString = strSubstitutor.replace(RESOURCE_NAMES_URL);
         URL resourceNamesUrl = new URL(resourceNamesUrlString);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Request resource from URL [ " + resourceNamesUrl + " ]");
+        }
+
         InputStream inputStream = processGetRequest(resourceNamesUrl, azure.getKeyStoreLocation(), azure.getKeyStorePassword());
 
         XStream xstream = new XStream();
@@ -372,5 +387,34 @@ public class AzureServiceBusStatsCollector {
             logger.error("Error getting queue names for [" + namespaceName + "]", e);
         }
         return Sets.newHashSet();
+    }
+
+    private void printMetrics(Map<String, String> resourceStats, String metricPrefix) {
+
+        for (Map.Entry<String, String> statsEntry : resourceStats.entrySet()) {
+            String value = statsEntry.getValue();
+            String key = metricPrefix + statsEntry.getKey();
+            try {
+                double metricValue = Double.parseDouble(value.trim());
+                print(key, metricValue);
+            } catch (NumberFormatException e) {
+                logger.error("Value of metric [" + key + "] can not be converted to number, Ignoring the stats.");
+            }
+        }
+
+    }
+
+    private void print(String key, double metricValue) {
+        MetricWriter metricWriter = monitor.getMetricWriter(key, MetricWriter.METRIC_AGGREGATION_TYPE_AVERAGE, MetricWriter.METRIC_TIME_ROLLUP_TYPE_AVERAGE, MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE
+        );
+        metricWriter.printMetric(String.valueOf(Math.round(metricValue)));
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(key + " #### " + metricValue);
+        }
+    }
+
+    public void setMetricPrefix(String metricPrefix) {
+        this.metricPrefix = metricPrefix;
     }
 }
