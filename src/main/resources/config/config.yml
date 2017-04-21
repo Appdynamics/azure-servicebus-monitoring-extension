@@ -14,8 +14,8 @@ azure:
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
     sasKeyName:
     sasKey:
-    encryptedSasKeyName: "ljcBmqhTjCJ6aR5Je7hhJMj6jlLIJTOEYHrn3G1fnDI="
-    encryptedSasKey: "uVOzZYtcCmKUwJYxu1Jarb528bvKZff1KqOMDcg/dgFmy3a+f6d9PRYB5MK11XXB"
+    encryptedSasKeyName:
+    encryptedSasKey:
     serviceBusRootUri: ".servicebus.windows.net"
     # Provide either include or exclude configuration.
     # If include and exclude are provided, will consider only include.
@@ -30,8 +30,8 @@ azure:
     excludeTopics: []
   - namespace: "appdx-dev1"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName: "RootManageSharedAccessKey"
-    sasKey: "lMF+11zFnWupE1tncBCLmhzqbC/Lv90rtDGdHWM9+0w="
+    sasKeyName:
+    sasKey:
     encryptedSasKeyName:
     encryptedSasKey:
     serviceBusRootUri: ".servicebus.windows.net"
