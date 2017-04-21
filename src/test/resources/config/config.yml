@@ -5,45 +5,31 @@
 
 #This will create it in specific Tier/Component. Make sure to replace <COMPONENT_ID> with the appropriate one from your environment.
 #To find the <COMPONENT_ID> in your environment, please follow the screenshot https://docs.appdynamics.com/display/PRO42/Build+a+Monitoring+Extension+Using+Java
-metricPrefix: Server|Component:<COMPONENT_ID>|Custom Metrics|Azure Service Bus|
+metricPrefix: Server|Component:123|Custom Metrics|Azure Service Bus|
 
 numberOfThreads: 2
 
 azure:
   - namespace: "appdx-dev"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName:
-    sasKey:
-    encryptedSasKeyName: "ljcBmqhTjCJ6aR5Je7hhJMj6jlLIJTOEYHrn3G1fnDI="
-    encryptedSasKey: "uVOzZYtcCmKUwJYxu1Jarb528bvKZff1KqOMDcg/dgFmy3a+f6d9PRYB5MK11XXB"
+    sasKeyName: "aaaa"
+    sasKey: "bbbb"
+    encryptedSasKeyName:
+    encryptedSasKey:
     serviceBusRootUri: ".servicebus.windows.net"
-    # Provide either include or exclude configuration.
-    # If include and exclude are provided, will consider only include.
-    # If include and exclude are not provided, will fetch everything.
-    # Define queues to include. supports regex
-    includeQueues: ["test.*"]
     # Define queues to exclude. supports regex
-    excludeQueues: []
-    # Define topics to include. supports regex
-    includeTopics: []
+    excludeQueues: ["test2"]
     # Define topics to exclude. supports regex
     excludeTopics: []
   - namespace: "appdx-dev1"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName: "RootManageSharedAccessKey"
-    sasKey: "lMF+11zFnWupE1tncBCLmhzqbC/Lv90rtDGdHWM9+0w="
+    sasKeyName: "aaa"
+    sasKey: "bbb"
     encryptedSasKeyName:
     encryptedSasKey:
     serviceBusRootUri: ".servicebus.windows.net"
-    # Provide either include or exclude configuration.
-    # If include and exclude are provided, will consider only include.
-    # If include and exclude are not provided, will fetch everything.
-    # Define queues to include. supports regex
-    includeQueues: []
     # Define queues to exclude. supports regex
     excludeQueues: []
-    # Define topics to include. supports regex
-    includeTopics: []
     # Define topics to exclude. supports regex
     excludeTopics: []
 
