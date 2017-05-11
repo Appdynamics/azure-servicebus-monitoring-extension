@@ -168,7 +168,8 @@ The following metrics are reported.
 |Azure Service Bus/{NameSpace}/Queues/{QueueName}/AvailabilityStatus|
 
 ###Topics
-| Metric Path  |
+
+| Metrics|
 |---------------- |
 |Azure Service Bus/{NameSpace}/Topics/{TopicName}/ActiveMessageCount|
 |Azure Service Bus/{NameSpace}/Topics/{TopicName}/DeadLetterMessageCount|
