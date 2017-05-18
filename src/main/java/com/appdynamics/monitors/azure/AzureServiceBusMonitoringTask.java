@@ -188,7 +188,7 @@ public class AzureServiceBusMonitoringTask implements Runnable {
                         logger.trace("Topic response from azure " + responseString);
                         Feed topicsFeed = (Feed) xStream.fromXML(responseString);
 
-                        parseTopicResult(namespace, topicsFeed.listTopics(), excludeTopics, topicMetricsFromConfig);
+                        parseTopicResult(namespace, topicsFeed.listTopics(), includeTopics, excludeTopics, topicMetricsFromConfig);
 
                     } else {
                         if (response != null) {
@@ -360,13 +360,19 @@ public class AzureServiceBusMonitoringTask implements Runnable {
         return Collections2.filter(allElements, new IncludePatternPredicate(includePattern));
     }
 
-    private void parseTopicResult(String namespace, List<TopicDescription> topics, List<String> excludeTopics, List<Map> topicMetricsFromConfig) {
+    private void parseTopicResult(String namespace, List<TopicDescription> topics, List<String> includeTopics, List<String> excludeTopics, List<Map> topicMetricsFromConfig) {
 
         Collection<TopicDescription> filteredTopics = null;
-        if (excludeTopics != null && !excludeTopics.isEmpty()) {
+
+        if ((includeTopics == null || includeTopics.isEmpty()) && (excludeTopics == null || excludeTopics.isEmpty())) {
+            filteredTopics = topics;
+        } else if (includeTopics != null && !includeTopics.isEmpty()) {
+            filteredTopics = (Collection<TopicDescription>) includeConfigured(topics, includeTopics);
+        } else if (excludeTopics != null && !excludeTopics.isEmpty()) {
             filteredTopics = (Collection<TopicDescription>) excludeConfigured(topics, excludeTopics);
         } else {
-            filteredTopics = topics;
+            //Fail safe
+            filteredTopics = new ArrayList<TopicDescription>();
         }
 
         List<Metric> metrics = new ArrayList<Metric>();
