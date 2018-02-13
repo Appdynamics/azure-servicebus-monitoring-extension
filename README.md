@@ -2,11 +2,11 @@
 
 This extension works only with the standalone machine agent.
 
-##Use Case
+## Use Case
 
 Windows Azure is an Internet-scale computing and services platform hosted in Microsoft data centers. It includes a number of features with corresponding developer services which can be used individually or together.
 
-##Installation
+## Installation
 
 1. Run "mvn clean install"
 2. Download and unzip the file 'target/AzureServiceBusMonitor.zip' to \{machineagent install dir\}/monitors
@@ -147,11 +147,24 @@ topicMetrics:
    
    ```
 
+## Password encryption
+To avoid setting the clear text password in the config.yml, please follow the steps below to encrypt the sasKeyName,sasKey  and set the encryptedSasKeyName,encryptedSasKey and the encryptionKey in the config.yml:
+1. Download the util jar to encrypt the password from [here](https://github.com/Appdynamics/maven-repo/raw/master/releases/com/appdynamics/appd-exts-commons/2.0.0/appd-exts-commons-2.0.0.jar).
+2. Encrypt password from the command line using the following command :
+   ```
+   java -cp "appd-exts-commons-2.0.0.jar" com.appdynamics.extensions.crypto.Encryptor myKey myPassword
+   ```
+   where "myKey" is any random key,
+         "myPassword" is the actual sasKeyName and sasKey that needs to be encrypted
+3. Add the values for "encryptedSasKeyName", "encryptedSasKey" and "encryptionKey" in the config.yml. 
+   The value for "encryptionKey" is the value substituted for "myKey" in the above command.
+   The value for "encryptedSasKeyName" and "encryptedSasKey" are the result of the above command.     
 
-##Metrics
+
+## Metrics
 The following metrics are reported.
 
-###Queues
+### Queues
 
 | Metrics|
 |---------------- |
@@ -167,7 +180,7 @@ The following metrics are reported.
 |Azure Service Bus/{NameSpace}/Queues/{QueueName}/Status|
 |Azure Service Bus/{NameSpace}/Queues/{QueueName}/AvailabilityStatus|
 
-###Topics
+### Topics
 
 | Metrics|
 |---------------- |
@@ -181,14 +194,14 @@ The following metrics are reported.
 |Azure Service Bus/{NameSpace}/Topics/{TopicName}/Status|
 |Azure Service Bus/{NameSpace}/Topics/{TopicName}/AvailabilityStatus|
 
-##Contributing
+## Contributing
 
 Always feel free to fork and contribute any changes directly here on GitHub.
 
-##Community
+## Community
 
 Find out more in the [AppSphere](https://www.appdynamics.com/community/exchange/extension/windows-azure-servicebus-monitoring-extension/) community.
 
-##Support
+## Support
 
 For any questions or feature request, please contact [AppDynamics Center of Excellence](mailto:help@appdynamics.com).
