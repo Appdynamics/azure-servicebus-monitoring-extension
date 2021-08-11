@@ -1,0 +1,31 @@
+<!--
+  ~ Copyright 2018. AppDynamics LLC and its affiliates.
+  ~ All Rights Reserved.
+  ~ This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+  ~ The copyright notice above does not evidence any actual or intended publication of such source code.
+  -->
+
+<monitor>
+        <name>AzureServiceBusMonitor</name>
+        <type>managed</type>
+        <description>Windows Azure ServiceBus Monitor</description>
+        <monitor-configuration></monitor-configuration>
+        <monitor-run-task>
+                <execution-style>periodic</execution-style>
+                <execution-frequency-in-seconds>60</execution-frequency-in-seconds>
+                <name>Azure ServiceBus Monitor Run Task</name>
+                <display-name>Azure ServiceBus Monitor Task</display-name>
+                <description>Azure ServiceBus Monitor Task</description>
+                <type>java</type>
+                <execution-timeout-in-secs>60</execution-timeout-in-secs>
+                <task-arguments>
+                    <!-- config file-->
+                    <argument name="config-file" is-required="true" default-value="monitors/AzureServiceBusMonitor/config.yml" />
+                    <argument name="metric-file" is-required="true" default-value="monitors/AzureServiceBusMonitor/metrics.xml" />
+		       </task-arguments>
+                <java-task>
+                    <classpath>azure-servicebus-monitoring-extension.jar</classpath>
+                        <impl-class>com.appdynamics.monitors.azure.AzureServiceBusMonitor</impl-class>
+                </java-task>
+        </monitor-run-task>
+</monitor>

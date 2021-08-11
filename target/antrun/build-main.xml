@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main"  >
+<target name="main">
+  <property name="target.dir" value="/Users/abhimaro/appd/repositories/extensions/github/azure-servicebus-monitoring-extension/target/AzureServiceBusMonitor"/>
+  <mkdir dir="${target.dir}"/>
+  <copy todir="${target.dir}">
+    <fileset includes="monitor.xml" dir="src/main/resources/config"/>
+    <fileset includes="config.yml" dir="src/main/resources/config"/>
+    <fileset includes="metrics.xml" dir="src/main/resources/config"/>
+    <fileset includes="LICENSE.txt,NOTICE.txt" dir="/Users/abhimaro/appd/repositories/extensions/github/azure-servicebus-monitoring-extension"/>
+  </copy>
+  <copy todir="${target.dir}">
+    <fileset includes="azure-servicebus-monitoring-extension.jar" dir="/Users/abhimaro/appd/repositories/extensions/github/azure-servicebus-monitoring-extension/target"/>
+  </copy>
+  <zip destfile="${target.dir}-2.1.0.zip">
+    <zipfileset prefix="AzureServiceBusMonitor/" filemode="755" dir="${target.dir}"/>
+  </zip>
+  <delete dir="${target.dir}"/>
+</target>
+</project>

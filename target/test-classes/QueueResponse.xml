@@ -1,0 +1,95 @@
+<!--
+  ~ Copyright 2018. AppDynamics LLC and its affiliates.
+  ~ All Rights Reserved.
+  ~ This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+  ~ The copyright notice above does not evidence any actual or intended publication of such source code.
+  -->
+
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title type="text">Queues</title>
+    <id>https://appdx-dev.servicebus.windows.net/$Resources/Queues?api-version=2013-07</id>
+    <updated>2017-04-17T07:57:02Z</updated>
+    <link rel="self" href="https://appdx-dev.servicebus.windows.net/$Resources/Queues?api-version=2013-07"/>
+    <entry xml:base="https://appdx-dev.servicebus.windows.net/$Resources/Queues?api-version=2013-07">
+        <id>https://appdx-dev.servicebus.windows.net/test1?api-version=2013-07</id>
+        <title type="text">test1</title>
+        <published>2016-10-12T14:33:16Z</published>
+        <updated>2016-10-12T14:33:16Z</updated>
+        <author>
+            <name>appdx-dev</name>
+        </author>
+        <link rel="self" href="../test1?api-version=2013-07"/>
+        <content type="application/xml">
+            <QueueDescription xmlns="http://schemas.microsoft.com/netservices/2010/10/servicebus/connect">
+                <LockDuration>PT30S</LockDuration>
+                <MaxSizeInMegabytes>16384</MaxSizeInMegabytes>
+                <RequiresDuplicateDetection>false</RequiresDuplicateDetection>
+                <RequiresSession>false</RequiresSession>
+                <DefaultMessageTimeToLive>P14D</DefaultMessageTimeToLive>
+                <DeadLetteringOnMessageExpiration>false</DeadLetteringOnMessageExpiration>
+                <DuplicateDetectionHistoryTimeWindow>PT10M</DuplicateDetectionHistoryTimeWindow>
+                <MaxDeliveryCount>10</MaxDeliveryCount>
+                <EnableBatchedOperations>true</EnableBatchedOperations>
+                <SizeInBytes>574</SizeInBytes>
+                <MessageCount>3</MessageCount>
+                <IsAnonymousAccessible>false</IsAnonymousAccessible>
+                <AuthorizationRules></AuthorizationRules>
+                <Status>Active</Status>
+                <CreatedAt>2016-10-12T14:33:16.09Z</CreatedAt>
+                <UpdatedAt>2016-10-12T14:33:16.463Z</UpdatedAt>
+                <AccessedAt>2017-04-11T08:29:13.74Z</AccessedAt>
+                <SupportOrdering>false</SupportOrdering>
+                <CountDetails xmlns:d2p1="http://schemas.microsoft.com/netservices/2011/06/servicebus">
+                    <d2p1:ActiveMessageCount>3</d2p1:ActiveMessageCount>
+                    <d2p1:DeadLetterMessageCount>0</d2p1:DeadLetterMessageCount>
+                    <d2p1:ScheduledMessageCount>0</d2p1:ScheduledMessageCount>
+                    <d2p1:TransferMessageCount>0</d2p1:TransferMessageCount>
+                    <d2p1:TransferDeadLetterMessageCount>0</d2p1:TransferDeadLetterMessageCount>
+                </CountDetails>
+                <AutoDeleteOnIdle>P10675199DT2H48M5.4775807S</AutoDeleteOnIdle>
+                <EntityAvailabilityStatus>Available</EntityAvailabilityStatus>
+            </QueueDescription>
+        </content>
+    </entry>
+    <entry xml:base="https://appdx-dev.servicebus.windows.net/$Resources/Queues?api-version=2013-07">
+        <id>https://appdx-dev.servicebus.windows.net/test2?api-version=2013-07</id>
+        <title type="text">test2</title>
+        <published>2017-02-03T14:13:29Z</published>
+        <updated>2017-02-03T14:13:29Z</updated>
+        <author>
+            <name>appdx-dev</name>
+        </author>
+        <link rel="self" href="../test2?api-version=2013-07"/>
+        <content type="application/xml">
+            <QueueDescription xmlns="http://schemas.microsoft.com/netservices/2010/10/servicebus/connect">
+                <LockDuration>PT30S</LockDuration>
+                <MaxSizeInMegabytes>16384</MaxSizeInMegabytes>
+                <RequiresDuplicateDetection>false</RequiresDuplicateDetection>
+                <RequiresSession>false</RequiresSession>
+                <DefaultMessageTimeToLive>P14D</DefaultMessageTimeToLive>
+                <DeadLetteringOnMessageExpiration>false</DeadLetteringOnMessageExpiration>
+                <DuplicateDetectionHistoryTimeWindow>PT10M</DuplicateDetectionHistoryTimeWindow>
+                <MaxDeliveryCount>10</MaxDeliveryCount>
+                <EnableBatchedOperations>true</EnableBatchedOperations>
+                <SizeInBytes>159</SizeInBytes>
+                <MessageCount>1</MessageCount>
+                <IsAnonymousAccessible>false</IsAnonymousAccessible>
+                <AuthorizationRules></AuthorizationRules>
+                <Status>Active</Status>
+                <CreatedAt>2017-02-03T14:13:29.833Z</CreatedAt>
+                <UpdatedAt>2017-02-03T14:13:29.99Z</UpdatedAt>
+                <AccessedAt>2017-02-03T14:14:11.6Z</AccessedAt>
+                <SupportOrdering>false</SupportOrdering>
+                <CountDetails xmlns:d2p1="http://schemas.microsoft.com/netservices/2011/06/servicebus">
+                    <d2p1:ActiveMessageCount>1</d2p1:ActiveMessageCount>
+                    <d2p1:DeadLetterMessageCount>0</d2p1:DeadLetterMessageCount>
+                    <d2p1:ScheduledMessageCount>0</d2p1:ScheduledMessageCount>
+                    <d2p1:TransferMessageCount>0</d2p1:TransferMessageCount>
+                    <d2p1:TransferDeadLetterMessageCount>0</d2p1:TransferDeadLetterMessageCount>
+                </CountDetails>
+                <AutoDeleteOnIdle>P10675199DT2H48M5.4775807S</AutoDeleteOnIdle>
+                <EntityAvailabilityStatus>Available</EntityAvailabilityStatus>
+            </QueueDescription>
+        </content>
+    </entry>
+</feed>

@@ -1,0 +1,74 @@
+# Azure Service Bus particulars
+
+#This will create this metric in all the tiers, under this path
+#metricPrefix: Custom Metrics|Azure Service Bus|
+
+#This will create it in specific Tier/Component. Make sure to replace <COMPONENT_ID> with the appropriate one from your environment.
+#To find the <COMPONENT_ID> in your environment, please follow the screenshot https://docs.appdynamics.com/display/PRO42/Build+a+Monitoring+Extension+Using+Java
+metricPrefix: Custom Metrics|Azure Service Bus|
+
+numberOfThreads: 6
+
+servers:
+  - namespace: "testabhimanyu"
+    displayName: "Test"
+    # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
+    sasKeyName: RootManageSharedAccessKey
+    sasKey: vOQ7vGPSfYKD/MEu1x0H/X93ruYhCXyCr9k0J8xllZg=
+    encryptedSasKeyName:
+    encryptedSasKey:
+    serviceBusRootUri: ".servicebus.windows.net"
+    # Provide either include or exclude configuration.
+    # If include and exclude are provided, will consider only include.
+    # If include and exclude are not provided, will fetch everything.
+    # Define queues to include. supports regex
+    queueFilters:
+      #An asterisk on its own matches all possible names.
+      include: [ "*" ]
+      #exclude all queues that starts with SYSTEM or AMQ.
+      exclude:
+        - type: "STARTSWITH"
+          values: [ "tes","AMQ" ]
+    topicFilters:
+      include: [ "*" ]
+      exclude:
+        #type value: STARTSWITH, EQUALS, ENDSWITH, CONTAINS
+        - type: "STARTSWITH"
+          #The name of the topic name, comma separated values
+          values: []
+
+  - namespace: "testabhimanyu"
+    displayName: "Test2"
+    # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
+    sasKeyName: RootManageSharedAccessKey
+    sasKey:  vOQ7vGPSfYKD/MEu1x0H/X93ruYhCXyCr9k0J8xllZg=
+    encryptedSasKeyName:
+    encryptedSasKey:
+    serviceBusRootUri: ".servicebus.windows.net"
+    # Provide either include or exclude configuration.
+    # If include and exclude are provided, will consider only include.
+    # If include and exclude are not provided, will fetch everything.
+    # Define queues to include. supports regex
+    queueFilters:
+      #An asterisk on its own matches all possible names.
+        include: [ "JJ*" ]
+        #exclude all queues that starts with SYSTEM or AMQ.
+        exclude:
+          - type: "STARTSWITH"
+            values: [ "SYSTEM","AMQ" ]
+    topicFilters:
+        include: []
+        exclude:
+          #type value: STARTSWITH, EQUALS, ENDSWITH, CONTAINS
+          - type: "STARTSWITH"
+            #The name of the topic name, comma separated values
+            values: ["kk"]
+
+encryptionKey: "hello"
+
+#Proxy server URI
+proxyUri:
+#Proxy server user name
+proxyUser:
+#Proxy server password
+proxyPassword:

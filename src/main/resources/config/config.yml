@@ -5,15 +5,16 @@
 
 #This will create it in specific Tier/Component. Make sure to replace <COMPONENT_ID> with the appropriate one from your environment.
 #To find the <COMPONENT_ID> in your environment, please follow the screenshot https://docs.appdynamics.com/display/PRO42/Build+a+Monitoring+Extension+Using+Java
-metricPrefix: Server|Component:<COMPONENT_ID>|Custom Metrics|Azure Service Bus|
+metricPrefix: Custom Metrics|Azure Service Bus|
 
-numberOfThreads: 2
+numberOfThreads: 6
 
-azure:
-  - namespace: "appdx-dev"
+servers:
+  - namespace: "testabhimanyu"
+    displayName: "Test"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName:
-    sasKey:
+    sasKeyName: RootManageSharedAccessKey
+    sasKey: vOQ7vGPSfYKD/MEu1x0H/X93ruYhCXyCr9k0J8xllZg=
     encryptedSasKeyName:
     encryptedSasKey:
     serviceBusRootUri: ".servicebus.windows.net"
@@ -21,17 +22,26 @@ azure:
     # If include and exclude are provided, will consider only include.
     # If include and exclude are not provided, will fetch everything.
     # Define queues to include. supports regex
-    includeQueues: ["test.*"]
-    # Define queues to exclude. supports regex
-    excludeQueues: []
-    # Define topics to include. supports regex
-    includeTopics: []
-    # Define topics to exclude. supports regex
-    excludeTopics: []
-  - namespace: "appdx-dev1"
+    queueFilters:
+      #An asterisk on its own matches all possible names.
+      include: [ "*" ]
+      #exclude all queues that starts with SYSTEM or AMQ.
+      exclude:
+        - type: "STARTSWITH"
+          values: [ "tes","AMQ" ]
+    topicFilters:
+      include: [ "*" ]
+      exclude:
+        #type value: STARTSWITH, EQUALS, ENDSWITH, CONTAINS
+        - type: "STARTSWITH"
+          #The name of the topic name, comma separated values
+          values: []
+
+  - namespace: "testabhimanyu"
+    displayName: "Test2"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName:
-    sasKey:
+    sasKeyName: RootManageSharedAccessKey
+    sasKey:  vOQ7vGPSfYKD/MEu1x0H/X93ruYhCXyCr9k0J8xllZg=
     encryptedSasKeyName:
     encryptedSasKey:
     serviceBusRootUri: ".servicebus.windows.net"
@@ -39,13 +49,20 @@ azure:
     # If include and exclude are provided, will consider only include.
     # If include and exclude are not provided, will fetch everything.
     # Define queues to include. supports regex
-    includeQueues: []
-    # Define queues to exclude. supports regex
-    excludeQueues: []
-    # Define topics to include. supports regex
-    includeTopics: []
-    # Define topics to exclude. supports regex
-    excludeTopics: []
+    queueFilters:
+      #An asterisk on its own matches all possible names.
+        include: [ "JJ*" ]
+        #exclude all queues that starts with SYSTEM or AMQ.
+        exclude:
+          - type: "STARTSWITH"
+            values: [ "SYSTEM","AMQ" ]
+    topicFilters:
+        include: []
+        exclude:
+          #type value: STARTSWITH, EQUALS, ENDSWITH, CONTAINS
+          - type: "STARTSWITH"
+            #The name of the topic name, comma separated values
+            values: ["kk"]
 
 encryptionKey: "hello"
 
@@ -55,70 +72,3 @@ proxyUri:
 proxyUser:
 #Proxy server password
 proxyPassword:
-
-# type once defined can not be changed later.
-# type consists is made of: aggregationType.timeRollup.clusterRollup
-queueMetrics:
-  - name: "ActiveMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "DeadLetterMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "ScheduledMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "TransferMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "TransferDeadLetterMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "MaxDeliveryCount"
-    type: "OBS.CUR.COL"
-  - name: "MaxSizeInMegabytes"
-    type: "OBS.CUR.COL"
-  - name: "MessageCount"
-    type: "OBS.CUR.COL"
-  - name: "SizeInBytes"
-    type: "OBS.CUR.COL"
-  - name: "Status"
-    type: "OBS.CUR.COL"
-    converter:
-       Active: "1"
-       Disabled: "2"
-       Restoring: "3"
-       SendDisabled: "4"
-       ReceiveDisabled: "5"
-  - name: "AvailabilityStatus"
-    type: "OBS.CUR.COL"
-    converter:
-       Unknown: "1"
-       Available: "2"
-       Limited: "3"
-       Restoring: "4"
-topicMetrics:
-  - name: "ActiveMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "DeadLetterMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "ScheduledMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "TransferMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "TransferDeadLetterMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "MaxSizeInMegabytes"
-    type: "OBS.CUR.COL"
-  - name: "SizeInBytes"
-    type: "OBS.CUR.COL"
-  - name: "Status"
-    type: "OBS.CUR.COL"
-    converter:
-       Active: "1"
-       Disabled: "2"
-       Restoring: "3"
-       SendDisabled: "4"
-       ReceiveDisabled: "5"
-  - name: "AvailabilityStatus"
-    type: "OBS.CUR.COL"
-    converter:
-       Unknown: "1"
-       Available: "2"
-       Limited: "3"
-       Restoring: "4"
