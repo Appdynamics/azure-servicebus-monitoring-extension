@@ -24,11 +24,11 @@ servers:
     # Define queues to include. supports regex
     queueFilters:
       #An asterisk on its own matches all possible names.
-      include: [ "*" ]
+      include: []
       #exclude all queues that starts with SYSTEM or AMQ.
       exclude:
-        - type: "STARTSWITH"
-          values: [ "tes","AMQ" ]
+        - type: "CONTAINS"
+          values: []
     topicFilters:
       include: [ "*" ]
       exclude:

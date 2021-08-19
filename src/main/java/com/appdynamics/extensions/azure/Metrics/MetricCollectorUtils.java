@@ -1,6 +1,7 @@
 package com.appdynamics.extensions.azure.Metrics;
 
 import com.appdynamics.extensions.Constants;
+import com.appdynamics.extensions.azure.namespaces.IncludeFilter;
 import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.appdynamics.extensions.azure.namespaces.ExcludeFilter;
 import com.appdynamics.extensions.azure.namespaces.NamespacesInfo;
@@ -29,6 +30,7 @@ public class MetricCollectorUtils {
     }
 
     protected Boolean checkIncludeExcludeName(String resourceName, ResourceFilter resourceFilter) {
+
         Set<ExcludeFilter> excludeFilters = resourceFilter.getExclude();
         Set<String> includeFilters = resourceFilter.getInclude();
         if(included(resourceName, includeFilters)){
@@ -42,6 +44,8 @@ public class MetricCollectorUtils {
         for(ExcludeFilter filter : excludeFilters){
             String type = filter.getType();
         Set<String> filterValues = filter.getValues();
+            if(filterValues.size() == 0)
+                return true;
         switch (FilterType.valueOf(type)){
             case CONTAINS:
                 for (String filterValue : filterValues) {
@@ -77,17 +81,20 @@ public class MetricCollectorUtils {
         return true;
     }
     private Boolean included(String resourceName, Set<String> filters) {
-        if(resourceName == "*") {
-            return true;
-        }
-            if(resourceName.contains("*")) {
-                String name = resourceName.replace("*", "");
-                for(String filter: filters) {
-                    if(name.startsWith(filter)) {
-                        return true;
-                    }
+
+        for(String filter : filters){
+            if(filter.equals("*")) {
+                return true;
+            }
+
+            if(filter.contains("*")) {
+                String name = filter.replace("*", "");
+                if(resourceName.startsWith(name)) {
+                    return true;
                 }
             }
+        }
+
         return false;
     }
 }

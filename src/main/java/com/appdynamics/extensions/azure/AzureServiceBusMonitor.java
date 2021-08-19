@@ -19,14 +19,8 @@ import com.appdynamics.extensions.azure.namespaces.NamespacesInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
-import com.singularity.ee.agent.systemagent.api.exception.TaskExecutionException;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.PatternLayout;
 import org.slf4j.Logger;
 
-import java.io.OutputStreamWriter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -123,7 +117,7 @@ public class AzureServiceBusMonitor extends ABaseMonitor {
         AssertUtils.assertNotNull(getContextConfiguration().getMetricsXml(), "Metrics xml not available");
         AssertUtils.assertNotNull(namespaces, "The 'namespaces' section in config.yml is not initialised");
 
-        for (NamespacesInfo namespacesInfo : namespaces.getInstances()) {
+        for (NamespacesInfo namespacesInfo : namespaces.getNamespaces()) {
             AzureServiceBusMonitoringTask task = new AzureServiceBusMonitoringTask(serviceProvider, this.getContextConfiguration(), namespacesInfo);
             AssertUtils.assertNotNull(namespacesInfo.getDisplayName(), "The displayName can not be null");
             serviceProvider.submit((String) namespacesInfo.getDisplayName(), task);
@@ -135,20 +129,20 @@ public class AzureServiceBusMonitor extends ABaseMonitor {
         return (List<Map<String, ?>>) getContextConfiguration().getConfigYml().get("servers");
     }
 
-    public static void main(String[] args) throws TaskExecutionException {
-
-        ConsoleAppender ca = new ConsoleAppender();
-        ca.setWriter(new OutputStreamWriter(System.out));
-        ca.setLayout(new PatternLayout("%-5p [%t]: %m%n"));
-        ca.setThreshold(Level.DEBUG);
-        org.apache.log4j.Logger.getRootLogger().addAppender(ca);
-
-        AzureServiceBusMonitor monitor = new AzureServiceBusMonitor();
-        final Map<String, String> taskArgs = new HashMap<>();
-        taskArgs.put("config-file", "src/main/resources/config/config.yml");
-        taskArgs.put("metric-file", "src/main/resources/config/metrics.xml");
-
-        monitor.execute(taskArgs, null);
-
-    }
+//    public static void main(String[] args) throws TaskExecutionException {
+//
+//        ConsoleAppender ca = new ConsoleAppender();
+//        ca.setWriter(new OutputStreamWriter(System.out));
+//        ca.setLayout(new PatternLayout("%-5p [%t]: %m%n"));
+//        ca.setThreshold(Level.DEBUG);
+//        org.apache.log4j.Logger.getRootLogger().addAppender(ca);
+//
+//        AzureServiceBusMonitor monitor = new AzureServiceBusMonitor();
+//        final Map<String, String> taskArgs = new HashMap<>();
+//        taskArgs.put("config-file", "src/main/resources/config/config.yml");
+//        taskArgs.put("metric-file", "src/main/resources/config/metrics.xml");
+//
+//        monitor.execute(taskArgs, null);
+//
+//    }
 }
