@@ -6,17 +6,26 @@ This extension works only with the standalone machine agent.
 
 Windows Azure is an Internet-scale computing and services platform hosted in Microsoft data centers. It includes a number of features with corresponding developer services which can be used individually or together.
 
+## Prerequisite
+
+Extension uses [SAS authentication](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-sas)
+
+In order to use this extension, you do need a [Standalone JAVA Machine Agent](https://docs.appdynamics.com/display/PRO44/Java+Agent) or [SIM Agent](https://docs.appdynamics.com/display/PRO44/Server+Visibility).  For more details on downloading these products, please  visit [here](https://download.appdynamics.com/).
+
+
+
 ## Installation
 
-1. Run "mvn clean install"
-2. Download and unzip the file 'target/AzureServiceBusMonitor.zip' to \{machineagent install dir\}/monitors
-3. Open <b>monitor.xml</b> and configure the Azure arguments
+1. Download and unzip the AzureServiceMonitor.zip to the "<MachineAgent_Dir>/monitors" directory
+2. Edit the file config.yml as described below in Configuration Section, located in    <MachineAgent_Dir>/monitors/AzureServiceMonitor and update the Azure server(s) details.
+3. All metrics to be reported are configured in metrics.xml. Users can remove entries from metrics.xml to stop the metric from reporting.
+4. Restart the Machine Agent
 
-<pre>
-&lt;argument name="config-file" is-required="true" default-value="monitors/AzureServiceBusMonitor/config.yml" /&gt;
-</pre>
+Please place the extension in the **"monitors"** directory of your **Machine Agent** installation directory. Do not place the extension in the **"extensions"** directory of your **Machine Agent** installation directory.
 
-<b>config-file</b> : yml file where we define the Azure Service Bus configurations<br/>
+
+## Configuration
+
 
 example yml configuration
    ```
@@ -27,15 +36,16 @@ example yml configuration
 
 #This will create it in specific Tier/Component. Make sure to replace <COMPONENT_ID> with the appropriate one from your environment.
 #To find the <COMPONENT_ID> in your environment, please follow the screenshot https://docs.appdynamics.com/display/PRO42/Build+a+Monitoring+Extension+Using+Java
-metricPrefix: Server|Component:<COMPONENT_ID>|Custom Metrics|Azure Service Bus|
+metricPrefix: Custom Metrics|Azure Service Bus|
 
-numberOfThreads: 2
+numberOfThreads: 6
 
-azure:
-  - namespace: "appdx-dev"
+servers:
+  - namespace: "testabhimanyu"
+    displayName: "Test"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName:
-    sasKey:
+    sasKeyName: XXXXXXXXXXXXXXX
+    sasKey: XxXxxxxxxxxxxxxxx
     encryptedSasKeyName:
     encryptedSasKey:
     serviceBusRootUri: ".servicebus.windows.net"
@@ -43,165 +53,64 @@ azure:
     # If include and exclude are provided, will consider only include.
     # If include and exclude are not provided, will fetch everything.
     # Define queues to include. supports regex
-    includeQueues: ["test.*"]
-    # Define queues to exclude. supports regex
-    excludeQueues: []
-    # Define topics to include. supports regex
-    includeTopics: []
-    # Define topics to exclude. supports regex
-    excludeTopics: []
-  - namespace: "appdx-dev1"
-    # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName:
-    sasKey:
-    encryptedSasKeyName:
-    encryptedSasKey:
-    serviceBusRootUri: ".servicebus.windows.net"
-    # Provide either include or exclude configuration.
-    # If include and exclude are provided, will consider only include.
-    # If include and exclude are not provided, will fetch everything.
-    # Define queues to include. supports regex
-    includeQueues: []
-    # Define queues to exclude. supports regex
-    excludeQueues: []
-    # Define topics to include. supports regex
-    includeTopics: []
-    # Define topics to exclude. supports regex
-    excludeTopics: []
-
-encryptionKey: "hello"
-
-#Proxy server URI
-proxyUri:
-#Proxy server user name
-proxyUser:
-#Proxy server password
-proxyPassword:
-
-# type once defined can not be changed later.
-# type consists is made of: aggregationType.timeRollup.clusterRollup
-queueMetrics:
-  - name: "ActiveMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "DeadLetterMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "ScheduledMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "TransferMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "TransferDeadLetterMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "MaxDeliveryCount"
-    type: "OBS.CUR.COL"
-  - name: "MaxSizeInMegabytes"
-    type: "OBS.CUR.COL"
-  - name: "MessageCount"
-    type: "OBS.CUR.COL"
-  - name: "SizeInBytes"
-    type: "OBS.CUR.COL"
-  - name: "Status"
-    type: "OBS.CUR.COL"
-    converter:
-       Active: "1"
-       Disabled: "2"
-       Restoring: "3"
-       SendDisabled: "4"
-       ReceiveDisabled: "5"
-  - name: "AvailabilityStatus"
-    type: "OBS.CUR.COL"
-    converter:
-       Unknown: "1"
-       Available: "2"
-       Limited: "3"
-       Restoring: "4"
-topicMetrics:
-  - name: "ActiveMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "DeadLetterMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "ScheduledMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "TransferMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "TransferDeadLetterMessageCount"
-    type: "OBS.CUR.COL"
-  - name: "MaxSizeInMegabytes"
-    type: "OBS.CUR.COL"
-  - name: "SizeInBytes"
-    type: "OBS.CUR.COL"
-  - name: "Status"
-    type: "OBS.CUR.COL"
-    converter:
-       Active: "1"
-       Disabled: "2"
-       Restoring: "3"
-       SendDisabled: "4"
-       ReceiveDisabled: "5"
-  - name: "AvailabilityStatus"
-    type: "OBS.CUR.COL"
-    converter:
-       Unknown: "1"
-       Available: "2"
-       Limited: "3"
-       Restoring: "4"
-   
+    queueFilters:
+      #An asterisk on its own matches all possible names.
+      include: []
+      #exclude all queues that starts with SYSTEM or AMQ.
+      exclude:
+        - type: "STARTSWITH"
+          values: ["SYSTEM", "AMQ"]
+    topicFilters:
+      include: [ "*" ]
+      exclude:
+        #type value: STARTSWITH, EQUALS, ENDSWITH, CONTAINS
+        - type: "STARTSWITH"
+          #The name of the topic name, comma separated values
+          values: []
    ```
 
-## Password encryption
-To avoid setting the clear text password in the config.yml, please follow the steps below to encrypt the sasKeyName,sasKey  and set the encryptedSasKeyName,encryptedSasKey and the encryptionKey in the config.yml:
-1. Download the util jar to encrypt the password from [here](https://github.com/Appdynamics/maven-repo/raw/master/releases/com/appdynamics/appd-exts-commons/2.0.0/appd-exts-commons-2.0.0.jar).
-2. Encrypt password from the command line using the following command :
-   ```
-   java -cp "appd-exts-commons-2.0.0.jar" com.appdynamics.extensions.crypto.Encryptor myKey myPassword
-   ```
-   where "myKey" is any random key,
-         "myPassword" is the actual sasKeyName and sasKey that needs to be encrypted
-3. Add the values for "encryptedSasKeyName", "encryptedSasKey" and "encryptionKey" in the config.yml. 
-   The value for "encryptionKey" is the value substituted for "myKey" in the above command.
-   The value for "encryptedSasKeyName" and "encryptedSasKey" are the result of the above command.     
+
+### Metrics
+
+Please refer to metrics.xml file located at `<MachineAgentInstallationDirectory>/monitors/AzureServiceBus/` to view the metrics which this extension can report.
+
+### Credentials Encryption
+
+Please visit [this page](https://community.appdynamics.com/t5/Knowledge-Base/How-to-use-Password-Encryption-with-Extensions/ta-p/29397) to get detailed instructions on password encryption. The steps in this document will guide you through the whole process.
+
+### Extensions Workbench
+Workbench is an inbuilt feature provided with each extension in order to assist you to fine tune the extension setup before you actually deploy it on the controller. Please review the following document on [How to use the Extensions WorkBench](https://community.appdynamics.com/t5/Knowledge-Base/How-to-use-the-Extensions-WorkBench/ta-p/30130)
+
+### Troubleshooting
+1. Please ensure the RabbitMQ Management Plugin is enabled. Please check "" section of [this page](http://www.rabbitmq.com/management.html) for more details.
+2. Please follow the steps listed in this [troubleshooting-document](https://community.appdynamics.com/t5/Knowledge-Base/How-to-troubleshoot-missing-custom-metrics-or-extensions-metrics/ta-p/28695) in order to troubleshoot your issue. These are a set of common issues that customers might have faced during the installation of the extension. If these don't solve your issue, please follow the last step on the [troubleshooting-document](https://community.appdynamics.com/t5/Knowledge-Base/How-to-troubleshoot-missing-custom-metrics-or-extensions-metrics/ta-p/28695) to contact the support team.
+
+### Support Tickets
+If after going through the [Troubleshooting Document](https://community.appdynamics.com/t5/Knowledge-Base/How-to-troubleshoot-missing-custom-metrics-or-extensions-metrics/ta-p/28695) you have not been able to get your extension working, please file a ticket and add the following information.
+
+Please provide the following in order for us to assist you better.
+
+    1. Stop the running machine agent.
+    2. Delete all existing logs under <MachineAgent>/logs.
+    3. Please enable debug logging by editing the file <MachineAgent>/conf/logging/log4j.xml. Change the level value of the following <logger> elements to debug.
+        <logger name="com.singularity">
+        <logger name="com.appdynamics">
+    4. Start the machine agent and please let it run for 10 mins. Then zip and upload all the logs in the directory <MachineAgent>/logs/*.
+    5. Attach the zipped <MachineAgent>/conf/* directory here.
+    6. Attach the zipped <MachineAgent>/monitors/ExtensionFolderYouAreHavingIssuesWith directory here.
+
+For any support related questions, you can also contact help@appdynamics.com.
 
 
-## Metrics
-The following metrics are reported.
 
-### Queues
+### Contributing
 
-| Metrics|
-|---------------- |
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/ActiveMessageCount|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/DeadLetterMessageCount|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/ScheduledMessageCount|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/TransferMessageCount|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/TransferDeadLetterMessageCount|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/MaxDeliveryCount|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/MaxSizeInMegabytes|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/MessageCount|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/SizeInBytes|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/Status|
-|Azure Service Bus/{NameSpace}/Queues/{QueueName}/AvailabilityStatus|
+Always feel free to fork and contribute any changes directly here on [GitHub](https://github.com/Appdynamics/azure-servicebus-monitoring-extension).
 
-### Topics
-
-| Metrics|
-|---------------- |
-|Azure Service Bus/{NameSpace}/Topics/{TopicName}/ActiveMessageCount|
-|Azure Service Bus/{NameSpace}/Topics/{TopicName}/DeadLetterMessageCount|
-|Azure Service Bus/{NameSpace}/Topics/{TopicName}/ScheduledMessageCount|
-|Azure Service Bus/{NameSpace}/Topics/{TopicName}/TransferMessageCount|
-|Azure Service Bus/{NameSpace}/Topics/{TopicName}/TransferDeadLetterMessageCount|
-|Azure Service Bus/{NameSpace}/Topics/{TopicName}/MaxSizeInMegabytes|
-|Azure Service Bus/{NameSpace}/Topics/{TopicName}/SizeInBytes|
-|Azure Service Bus/{NameSpace}/Topics/{TopicName}/Status|
-|Azure Service Bus/{NameSpace}/Topics/{TopicName}/AvailabilityStatus|
-
-## Contributing
-
-Always feel free to fork and contribute any changes directly here on GitHub.
-
-## Community
-
-Find out more in the [AppSphere](https://www.appdynamics.com/community/exchange/extension/windows-azure-servicebus-monitoring-extension/) community.
-
-## Support
-
-For any questions or feature request, please contact [AppDynamics Center of Excellence](mailto:help@appdynamics.com).
+### Version
+|          Name            |  Version   |
+|--------------------------|------------|
+|Extension Version         |3.0.0       |
+|Controller Compatibility  |4.5 or Later|
+|Machine Agent Version     |4.5.13+     |
+|Last Update               |20/08/2021 |
