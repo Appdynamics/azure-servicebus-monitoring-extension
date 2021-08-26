@@ -9,7 +9,7 @@ package com.appdynamics.monitors.azure;
 
 import com.appdynamics.monitors.azure.pojo.Description;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

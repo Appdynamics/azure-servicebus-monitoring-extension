@@ -11,7 +11,7 @@
 
     <groupId>com.appdynamics.extensions</groupId>
     <artifactId>azure-servicebus-monitoring-extension</artifactId>
-    <version>2.0.1</version>
+    <version>3.0.0</version>
     <packaging>jar</packaging>
     <name>azure-servicebus-monitoring-extension</name>
     <url>http://maven.apache.org</url>
@@ -21,57 +21,20 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>com.appdynamics</groupId>
-            <artifactId>appd-exts-commons</artifactId>
-            <version>1.6.4</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.4</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.4</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.3.5</version>
-        </dependency>
-        <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
-            <version>1.4.9</version>
-        </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>1.13</version>
+            <version>1.4.18</version>
         </dependency>
         <dependency>
             <groupId>com.appdynamics</groupId>
-            <artifactId>machine-agent</artifactId>
-            <version>3.7.11</version>
+            <artifactId>machineagent-repackaged</artifactId>
+            <version>4.0.5.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.21</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava-jdk5</artifactId>
-            <version>14.0.1</version>
+            <groupId>com.appdynamics</groupId>
+            <artifactId>appd-exts-commons</artifactId>
+            <version>2.2.4</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -82,13 +45,13 @@
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito</artifactId>
-            <version>1.4.7</version>
+            <version>1.6.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>1.4.7</version>
+            <version>1.5.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -100,8 +63,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
