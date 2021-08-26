@@ -1,110 +1,216 @@
 # Azure Service Bus particulars
 
 #This will create this metric in all the tiers, under this path
-#metricPrefix: Custom Metrics|Azure Service Bus|
+metricPrefix: Custom Metrics|Azure Service Bus|
 
 #This will create it in specific Tier/Component. Make sure to replace <COMPONENT_ID> with the appropriate one from your environment.
 #To find the <COMPONENT_ID> in your environment, please follow the screenshot https://docs.appdynamics.com/display/PRO42/Build+a+Monitoring+Extension+Using+Java
-metricPrefix: Server|Component:123|Custom Metrics|Azure Service Bus|
+#metricPrefix: Server|Component:<COMPONENT_ID>|Custom Metrics|Azure Service Bus|
 
-numberOfThreads: 2
-
-azure:
-  - namespace: "appdx-dev"
+servers:
+  - displayName: "Server 1"
+    namespace: "appdx-dev"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
     sasKeyName: "aaaa"
     sasKey: "bbbb"
-    encryptedSasKeyName:
-    encryptedSasKey:
+    #encryptedSasKeyName:
+    #encryptedSasKey:
     serviceBusRootUri: ".servicebus.windows.net"
     # Define queues to exclude. supports regex
     excludeQueues: ["test2"]
     # Define topics to exclude. supports regex
     excludeTopics: []
-  - namespace: "appdx-dev1"
+  - displayName: "Server 2"
+    namespace: "appdx-dev1"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
     sasKeyName: "aaa"
     sasKey: "bbb"
-    encryptedSasKeyName:
-    encryptedSasKey:
+    #encryptedSasKeyName:
+    #encryptedSasKey:
     serviceBusRootUri: ".servicebus.windows.net"
     # Define queues to exclude. supports regex
     excludeQueues: []
     # Define topics to exclude. supports regex
     excludeTopics: []
 
-encryptionKey: "hello"
+encryptionKey: "welcome"
 
-#Proxy server URI
-proxyUri:
-#Proxy server user name
-proxyUser:
-#Proxy server password
-proxyPassword:
+proxy:
+  uri: ""
+  username: ""
+  password: ""
+  #encryptedPassword: ""
+
+#No need to change the default unless you know what you are doing.
+#queueUrl: /$Resources/Queues?api-version=2013-07
+#topicUrl: /$Resources/Topics?api-version=2013-07
+
+#Number of threads
+numberOfThreads: 10
 
 # type once defined can not be changed later.
 # type consists is made of: aggregationType.timeRollup.clusterRollup
 queueMetrics:
   - name: "ActiveMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "Active Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "DeadLetterMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "DeadLetter Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "ScheduledMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "Scheduled Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "TransferMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "Transfer Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "TransferDeadLetterMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "Transfer DeadLetter Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "MaxDeliveryCount"
-    type: "OBS.CUR.COL"
+    alias: "Max Delivery Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "MaxSizeInMegabytes"
-    type: "OBS.CUR.COL"
+    alias: "Max Size In Megabytes"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "MessageCount"
-    type: "OBS.CUR.COL"
+    alias: "Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "SizeInBytes"
-    type: "OBS.CUR.COL"
+    alias: "Size In Bytes"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "Status"
-    type: "OBS.CUR.COL"
-    converter:
-       Active: "1"
-       Disabled: "2"
-       Restoring: "3"
-       SendDisabled: "4"
-       ReceiveDisabled: "5"
-  - name: "AvailabilityStatus"
-    type: "OBS.CUR.COL"
-    converter:
-       Unknown: "1"
-       Available: "2"
-       Limited: "3"
-       Restoring: "4"
+    alias: "Status"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    convert:
+      Active: "1"
+      Disabled: "2"
+      Restoring: "3"
+      SendDisabled: "4"
+      ReceiveDisabled: "5"
+  - name: "EntityAvailabilityStatus"
+    alias: "Entity Availability Status"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    convert:
+      Unknown: "1"
+      Available: "2"
+      Limited: "3"
+      Restoring: "4"
 topicMetrics:
   - name: "ActiveMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "Active Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "DeadLetterMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "DeadLetter Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "ScheduledMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "Scheduled Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "TransferMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "Transfer Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "TransferDeadLetterMessageCount"
-    type: "OBS.CUR.COL"
+    alias: "Transfer DeadLetter Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "MaxSizeInMegabytes"
-    type: "OBS.CUR.COL"
+    alias: "Max Size In Megabytes"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "SizeInBytes"
-    type: "OBS.CUR.COL"
+    alias: "Size In Bytes"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
   - name: "Status"
-    type: "OBS.CUR.COL"
-    converter:
-       Active: "1"
-       Disabled: "2"
-       Restoring: "3"
-       SendDisabled: "4"
-       ReceiveDisabled: "5"
-  - name: "AvailabilityStatus"
-    type: "OBS.CUR.COL"
-    converter:
-       Unknown: "1"
-       Available: "2"
-       Limited: "3"
-       Restoring: "4"
+    alias: "Status"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    convert:
+      Active: "1"
+      Disabled: "2"
+      Restoring: "3"
+      SendDisabled: "4"
+      ReceiveDisabled: "5"
+  - name: "EntityAvailabilityStatus"
+    alias: "Entity Availability Status"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    convert:
+      Unknown: "1"
+      Available: "2"
+      Limited: "3"
+      Restoring: "4"
