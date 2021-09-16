@@ -11,11 +11,11 @@ Windows Azure is an Internet-scale computing and services platform hosted in Mic
 3. The extension needs to be able to connect to Azure server in order to collect and send metrics. To do this, you will have to establish a successful connection in between the extension and the product.
 
 ## Installation
-1. Run "mvn clean install"
+1. Run "mvn clean install" from "AzureServiceBusMonitorRepo"
 2. Unzip the contents of AzureServiceBusMonitor-\<version\>.zip file (&lt;AzureServiceBusMonitor&gt; / targets) to the "<MachineAgent_Dir>/monitors" directory
 3. Edit the file config.yml as described below in Configuration Section, located in <MachineAgent_Dir>/monitors/AzureServiceBusMonitor and update the Azure server(s) details.
-3. All metrics to be reported are also configured in config.yml file.
-4. Restart the Machine Agent
+4. All metrics to be reported are also configured in config.yml file.
+5. Restart the Machine Agent
 
 Please place the extension in the **"monitors"** directory of your **Machine Agent** installation directory. Do not place the extension in the **"extensions"** directory of your **Machine Agent** installation directory.
 
@@ -287,7 +287,7 @@ topicMetrics:
 ```
 
 #### Yml Validation
-Please copy all the contents of the config.yml file and go to http://www.yamllint.com/ . On reaching the website, paste the contents and press the “Go” button on the bottom left.
+Please copy all the contents of the config.yml file and go [here](https://jsonformatter.org/yaml-validator) . On reaching the website, paste the contents and press the “Validate YAML” button.
 
 ## Metrics
 The following metrics are reported.
@@ -339,6 +339,7 @@ Always feel free to fork and contribute any changes directly here on [GitHub](ht
 |          Name            |  Version   |
 |--------------------------|------------|
 |Extension Version         |3.0.0       |
-|Controller Compatibility  |4.5 or Later|
-|Machine Agent Version     |4.5.13+     |
 |Last Update               |26/08/2021  |
+|ChangeList|[ChangeLog](https://github.com/Appdynamics/azure-servicebus-monitoring-extension/blob/master/CHANGES.md)|
+
+**Note**: While extensions are maintained and supported by customers under the open-source licensing model, they interact with agents and Controllers that are subject to [AppDynamics’ maintenance and support policy](https://docs.appdynamics.com/latest/en/product-and-release-announcements/maintenance-support-for-software-versions). Some extensions have been tested with AppDynamics 4.5.13+ artifacts, but you are strongly recommended against using versions that are no longer supported.
