@@ -130,6 +130,8 @@ The metrics shown in the file are customizable. You can choose to modify metrics
 5. aggregationType: The aggregator qualifier specifies how the Machine Agent aggregates the values reported during a one-minute period. Valid values are **AVERAGE** (default) or **SUM** or **OBSERVATION**.
 6. timeRollUpType: The time-rollup qualifier specifies how the Controller rolls up the values when it converts from one-minute granularity tables to 10-minute granularity and 60-minute granularity tables over time. Valid values are **AVERAGE** (default) or **SUM** or **CURRENT**.
 7. convert: Used to report a metric that is reporting text value by converting the value to its mapped integer
+8. fromQueue: Specifies if the metric is collected from Azure metric API or from the Queue itself.
+9. fromTopic: Specifies if the metric is collected from Azure metric API or from the Topic itself.
 
 More details around this can be found [here](https://community.appdynamics.com/t5/Knowledge-Base/Extensions-Commons-Library-Metric-Transformers/ta-p/35413)
 
