@@ -11,10 +11,10 @@ servers:
   - displayName: "Server 1"
     namespace: "CloudCollectorNS"
     resourceGroup: "cloud-collectors-rg"
-    tenantId: "79edab66-eb8c-40b5-b907-b788a9b76fc0"
-    subscriptionId: "f0319a3f-4404-48f3-8a1e-06b0d38b0dcb"
-    clientId: "c4e81ceb-0eeb-42a7-8f02-8eccb9f602d7"
-    clientSecret: "6Yr8Q~1HantoqJCWLB8NHI8WncP6f~APxKddMbqz"
+    tenantId: ""
+    subscriptionId: ""
+    clientId: ""
+    clientSecret: ""
 
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
     #encryptedTenantId: ""
