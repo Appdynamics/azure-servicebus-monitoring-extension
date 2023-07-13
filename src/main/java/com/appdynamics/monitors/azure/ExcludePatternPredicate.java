@@ -7,7 +7,6 @@
 
 package com.appdynamics.monitors.azure;
 
-import com.appdynamics.monitors.azure.pojo.Description;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 
@@ -16,7 +15,7 @@ import java.util.List;
 /**
  * @author Satish Muddam
  */
-public class ExcludePatternPredicate implements Predicate<Description> {
+public class ExcludePatternPredicate implements Predicate<String> {
 
     private List<String> excludePatterns;
     private Predicate<CharSequence> patternPredicate;
@@ -44,9 +43,9 @@ public class ExcludePatternPredicate implements Predicate<Description> {
 
     }
 
-    public boolean apply(Description info) {
+    public boolean apply(String info) {
 
-        return patternPredicate.apply(info.getTitle());
+        return patternPredicate.apply(info);
 
     }
 }
