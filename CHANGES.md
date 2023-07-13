@@ -1,5 +1,9 @@
 # Azure Servicebus Monitoring Extension CHANGELOG
 
+### Version 4.0.0
+* Update extension to use Azure metric API to report accurate metrics
+* Added support to collect additional metrics from Azure metric API
+
 ### Version 3.0.0
 * Update to appd-exts-commons 2.2.4
 
