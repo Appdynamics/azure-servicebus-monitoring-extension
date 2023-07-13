@@ -22,10 +22,24 @@ public class Constants {
     public static final String SERVERS = "servers";
     public static final String DISPLAY_NAME = "displayName";
     public static final String NAMESPACE = "namespace";
-    public static final String SASKEYNAME = "sasKeyName";
-    public static final String SASKEY = "sasKey";
-    public static final String ENCRYPTEDSASKEYNAME = "encryptedSasKeyName";
-    public static final String ENCRYPTEDSASKEY = "encryptedSasKey";
+
+    public static final String RESOURCEGROUP = "resourceGroup";
+
+    public static final String TENANTID = "tenantId";
+
+    public static final String SUBSCRIPTIONID = "subscriptionId";
+
+    public static final String CLIENTID = "clientId";
+
+    public static final String CLIENTSECRET = "clientSecret";
+
+    public static final String ENCRYPTEDTENANTID = "encryptedTenantId";
+
+    public static final String ENCRYPTEDSUBSCRIPTIONID = "encryptedSubscriptionId";
+
+    public static final String ENCRYPTEDCLIENTID = "encryptedClientId";
+
+    public static final String ENCRYPTEDCLIENTSECRET = "encryptedClientSecret";
     public static final String SERVICEBUSROOTURI = "serviceBusRootUri";
     public static final String INCLUDE_QUEUES = "includeQueues";
     public static final String EXCLUDE_QUEUES = "excludeQueues";

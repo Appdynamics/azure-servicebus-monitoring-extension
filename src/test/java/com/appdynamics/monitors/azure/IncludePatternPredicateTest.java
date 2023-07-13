@@ -7,7 +7,6 @@
 
 package com.appdynamics.monitors.azure;
 
-import com.appdynamics.monitors.azure.pojo.Description;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
@@ -25,44 +24,39 @@ public class IncludePatternPredicateTest {
     public void testIncludePatternPredicateIncludeAll() {
         includePatternPredicate = new IncludePatternPredicate(Lists.<String>newArrayList(".*"));
 
-        Description description = new Description();
-        description.setTitle("abc");
+        String name = "abc";
 
-        Assert.assertTrue(includePatternPredicate.apply(description));
+        Assert.assertTrue(includePatternPredicate.apply(name));
 
         String title = RandomStringUtils.randomAlphanumeric(5);
-        description.setTitle(title);
+        name = title;
 
-        Assert.assertTrue(includePatternPredicate.apply(description));
+        Assert.assertTrue(includePatternPredicate.apply(name));
     }
 
     @Test
     public void testIncludePatternPredicateIncludePatternStart() {
         includePatternPredicate = new IncludePatternPredicate(Lists.<String>newArrayList("abc.*"));
 
-        Description description = new Description();
-        description.setTitle("abc123");
+        String name = "abc123";
 
-        Assert.assertTrue(includePatternPredicate.apply(description));
+        Assert.assertTrue(includePatternPredicate.apply(name));
 
-        description.setTitle("xyz123");
+        name = "xyz123";
 
-        Assert.assertFalse(includePatternPredicate.apply(description));
+        Assert.assertFalse(includePatternPredicate.apply(name));
     }
 
     @Test
     public void testIncludePatternPredicateIncludePatternEnd() {
         includePatternPredicate = new IncludePatternPredicate(Lists.<String>newArrayList(".*abc"));
 
-        Description description = new Description();
-        description.setTitle("123abc");
+        String name = "123abc";
 
-        Assert.assertTrue(includePatternPredicate.apply(description));
+        Assert.assertTrue(includePatternPredicate.apply(name));
 
-        description.setTitle("123xyz");
+        name = "123xyz";
 
-        Assert.assertFalse(includePatternPredicate.apply(description));
+        Assert.assertFalse(includePatternPredicate.apply(name));
     }
-
-
 }

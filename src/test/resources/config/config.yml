@@ -10,24 +10,24 @@ metricPrefix: Custom Metrics|Azure Service Bus|
 servers:
   - displayName: "Server 1"
     namespace: "appdx-dev"
+    resourceGroup: "rg1"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName: "aaaa"
-    sasKey: "bbbb"
-    #encryptedSasKeyName:
-    #encryptedSasKey:
-    serviceBusRootUri: ".servicebus.windows.net"
+    tenantId: "aaaa"
+    subscriptionId: "bbbb"
+    clientId: "ccc"
+    clientSecret: "ddd"
     # Define queues to exclude. supports regex
     excludeQueues: ["test2"]
     # Define topics to exclude. supports regex
     excludeTopics: []
   - displayName: "Server 2"
     namespace: "appdx-dev1"
+    resourceGroup: "rg2"
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName: "aaa"
-    sasKey: "bbb"
-    #encryptedSasKeyName:
-    #encryptedSasKey:
-    serviceBusRootUri: ".servicebus.windows.net"
+    tenantId: "aaa"
+    subscriptionId: "bbb"
+    clientId: "ccc"
+    clientSecret: "ddd"
     # Define queues to exclude. supports regex
     excludeQueues: []
     # Define topics to exclude. supports regex
@@ -40,10 +40,6 @@ proxy:
   username: ""
   password: ""
   #encryptedPassword: ""
-
-#No need to change the default unless you know what you are doing.
-#queueUrl: /$Resources/Queues?api-version=2013-07
-#topicUrl: /$Resources/Topics?api-version=2013-07
 
 #Number of threads
 numberOfThreads: 10

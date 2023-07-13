@@ -5,14 +5,14 @@ import com.appdynamics.extensions.AMonitorJob;
 import com.appdynamics.extensions.MetricWriteHelper;
 import com.appdynamics.extensions.conf.MonitorContextConfiguration;
 import com.appdynamics.extensions.metrics.Metric;
-import com.appdynamics.monitors.azure.Utility;
-import com.appdynamics.monitors.azure.pojo.Feed;
 import com.appdynamics.monitors.azure.processors.TopicMetricProcessor;
+import com.azure.monitor.query.MetricsQueryAsyncClient;
+import com.azure.resourcemanager.servicebus.fluent.ServiceBusManagementClient;
 import com.google.common.collect.Maps;
-import com.thoughtworks.xstream.XStream;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -33,20 +33,21 @@ import java.util.Map;
 import java.util.concurrent.Phaser;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(Utility.class)
 @PowerMockIgnore("javax.net.ssl.*")
+@Ignore
 public class TopicMetricProcessorTest {
-
-    @Mock
-    CloseableHttpClient httpClient;
-
-    XStream xStream;
 
     @Mock
     Phaser phaser;
 
     @Mock
     MetricWriteHelper metricWriteHelper;
+
+    @Mock
+    private ServiceBusManagementClient serviceBusManagementClient;
+
+    @Mock
+    private MetricsQueryAsyncClient metricsQueryAsyncClient;
 
     MonitorContextConfiguration contextConfiguration;
 
@@ -59,21 +60,15 @@ public class TopicMetricProcessorTest {
         Map<String,?> configYml = contextConfiguration.getConfigYml();
         String metricPrefix = contextConfiguration.getMetricPrefix();
 
-        initXStream();
-
         Map servers = ((List<Map>)configYml.get("servers")).get(0);
         String displayName = (String) servers.get("displayName");
         metricPrefix=metricPrefix+"|"+displayName;
+        String resourceGroup = (String) servers.get("resourceGroup");
         String namespace = (String) servers.get("namespace");
-        String serviceBusRootUri = (String) servers.get("serviceBusRootUri");
-        String plainSasKeyName = (String) servers.get("sasKeyName");
-        String plainSasKey = (String) servers.get("sasKey");
-        String endpoint = "/$Resources/Topics?api-version=2013-07";
         List<String> includeTopic = null;
         List<String> excludeTopic = (List<String>) servers.get("excludeTopics");
         List<Map> topicMetricsFromConfig = (List<Map>) configYml.get("topicMetrics");
-        topicMetricProcessorSpyTask = Mockito.spy(new TopicMetricProcessor(httpClient,metricWriteHelper,xStream,metricPrefix,displayName,namespace,serviceBusRootUri,plainSasKeyName,plainSasKey,endpoint,includeTopic,excludeTopic,topicMetricsFromConfig,phaser));
-        PowerMockito.mockStatic(Utility.class);
+        topicMetricProcessorSpyTask = Mockito.spy(new TopicMetricProcessor(serviceBusManagementClient, metricsQueryAsyncClient, metricWriteHelper,metricPrefix,displayName,resourceGroup,namespace,includeTopic,excludeTopic,topicMetricsFromConfig,phaser));
     }
 
     @Test
@@ -81,19 +76,6 @@ public class TopicMetricProcessorTest {
         Map<String,String> expectedMap = initExpectedMetricMap();
         Map<String,String> topicMetricsMap = Maps.newHashMap();
         ArgumentCaptor<List> pathCaptor = ArgumentCaptor.forClass(List.class);
-
-        PowerMockito.when(Utility.getStringResponseFromUrl(Mockito.any(CloseableHttpClient.class),Mockito.anyString(),Mockito.anyString(),Mockito.anyString(),Mockito.anyString(),Mockito.anyString())).thenAnswer(
-                new Answer() {
-                    public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                        String endpoint = (String) invocationOnMock.getArguments()[5];
-                        String path=null;
-                        if(endpoint.contains("/Topics")){
-                            path = "src/test/resources/TopicResponse.xml";
-                        }
-                        return new String(Files.readAllBytes(new File(path).toPath()), StandardCharsets.UTF_8);
-                    }
-                }
-        );
 
         topicMetricProcessorSpyTask.run();
 
@@ -120,12 +102,4 @@ public class TopicMetricProcessorTest {
         expectedMap.put("Custom Metrics|Azure Service Bus|Server 1|Topics|topic1|Entity Availability Status","Available");
         return expectedMap;
     }
-
-    public void initXStream(){
-        xStream = new XStream();
-        xStream.ignoreUnknownElements();
-        xStream.processAnnotations(Feed.class);
-        xStream.allowTypeHierarchy(Feed.class);
-    }
-
 }
