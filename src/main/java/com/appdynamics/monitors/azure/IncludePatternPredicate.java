@@ -7,7 +7,6 @@
 
 package com.appdynamics.monitors.azure;
 
-import com.appdynamics.monitors.azure.pojo.Description;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 
@@ -16,7 +15,7 @@ import java.util.List;
 /**
  * @author Satish Muddam
  */
-public class IncludePatternPredicate implements Predicate<Description> {
+public class IncludePatternPredicate implements Predicate<String> {
 
     private List<String> includePatterns;
     private Predicate<CharSequence> patternPredicate;
@@ -39,7 +38,7 @@ public class IncludePatternPredicate implements Predicate<Description> {
         }
     }
 
-    public boolean apply(Description info) {
-        return patternPredicate.apply(info.getTitle());
+    public boolean apply(String info) {
+        return patternPredicate.apply(info);
     }
 }

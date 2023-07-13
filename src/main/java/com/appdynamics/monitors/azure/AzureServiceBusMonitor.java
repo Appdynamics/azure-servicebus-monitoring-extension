@@ -13,8 +13,14 @@ import com.appdynamics.extensions.conf.MonitorContextConfiguration;
 import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.appdynamics.extensions.util.AssertUtils;
 
+import com.singularity.ee.agent.systemagent.api.exception.TaskExecutionException;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.PatternLayout;
 import org.slf4j.Logger;
 
+import java.io.OutputStreamWriter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,5 +67,20 @@ public class AzureServiceBusMonitor extends ABaseMonitor {
     @Override
     protected List<Map<String, ?>> getServers() {
         return (List<Map<String, ?>>) configYml.get(SERVERS);
+    }
+
+    public static void main(String[] args) throws TaskExecutionException {
+
+        ConsoleAppender ca = new ConsoleAppender();
+        ca.setWriter(new OutputStreamWriter(System.out));
+        ca.setLayout(new PatternLayout("%-5p [%t]: %m%n"));
+        ca.setThreshold(Level.DEBUG);
+
+        org.apache.log4j.Logger.getRootLogger().addAppender(ca);
+
+        AzureServiceBusMonitor azureServiceBusMonitor = new AzureServiceBusMonitor();
+        Map<String, String> taskArgs = new HashMap<>();
+        taskArgs.put("config-file", "src/main/resources/config/config.yml");
+        azureServiceBusMonitor.execute(taskArgs, null);
     }
 }

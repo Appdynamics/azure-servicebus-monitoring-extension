@@ -5,16 +5,18 @@ import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.appdynamics.extensions.metrics.Metric;
 import com.appdynamics.monitors.azure.ExcludePatternPredicate;
 import com.appdynamics.monitors.azure.IncludePatternPredicate;
-import com.appdynamics.monitors.azure.Utility;
-import com.appdynamics.monitors.azure.pojo.CountDetails;
-import com.appdynamics.monitors.azure.pojo.Feed;
-import com.appdynamics.monitors.azure.pojo.TopicDescription;
-import com.google.common.collect.Collections2;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.monitor.query.MetricsQueryAsyncClient;
+import com.azure.monitor.query.models.*;
+import com.azure.resourcemanager.servicebus.fluent.ServiceBusManagementClient;
+import com.azure.resourcemanager.servicebus.fluent.models.SBTopicInner;
 import com.google.common.collect.Lists;
-import com.thoughtworks.xstream.XStream;
-import org.apache.http.impl.client.CloseableHttpClient;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
+import reactor.core.publisher.Flux;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Phaser;
 import java.util.stream.Collectors;
@@ -25,32 +27,29 @@ public class TopicMetricProcessor implements Runnable {
 
     private static final Logger logger = ExtensionsLoggerFactory.getLogger(TopicMetricProcessor.class);
 
-    private CloseableHttpClient httpClient;
+    private ServiceBusManagementClient serviceBusManagementClient;
+
+    private MetricsQueryAsyncClient metricsQueryAsyncClient;
     private MetricWriteHelper metricWriteHelper;
-    private XStream xStream;
     private String metricPrefix;
     private String displayName;
+
+    private String resourceGroup;
     private String namespace;
-    private String serviceBusRootUri;
-    private String plainSasKeyName;
-    private String plainSasKey;
-    private String endpoint;
+
     private List<String> includeTopics;
     private List<String> excludeTopics;
     private List<Map> topicMetricsFromConfig;
     private Phaser phaser;
 
-    public TopicMetricProcessor(CloseableHttpClient httpClient, MetricWriteHelper metricWriteHelper, XStream xStream, String metricPrefix, String displayName, String namespace, String serviceBusRootUri, String plainSasKeyName, String plainSasKey, String endpoint, List<String> includeTopics, List<String> excludeTopics, List<Map> topicMetricsFromConfig, Phaser phaser) {
-        this.httpClient = httpClient;
+    public TopicMetricProcessor(ServiceBusManagementClient serviceBusManagementClient, MetricsQueryAsyncClient metricsQueryAsyncClient, MetricWriteHelper metricWriteHelper, String metricPrefix, String displayName, String resourceGroup, String namespace, List<String> includeTopics, List<String> excludeTopics, List<Map> topicMetricsFromConfig, Phaser phaser) {
+        this.serviceBusManagementClient = serviceBusManagementClient;
+        this.metricsQueryAsyncClient = metricsQueryAsyncClient;
         this.metricWriteHelper = metricWriteHelper;
-        this.xStream = xStream;
         this.metricPrefix = metricPrefix;
         this.displayName = displayName;
+        this.resourceGroup = resourceGroup;
         this.namespace = namespace;
-        this.serviceBusRootUri = serviceBusRootUri;
-        this.plainSasKeyName = plainSasKeyName;
-        this.plainSasKey = plainSasKey;
-        this.endpoint = endpoint;
         this.includeTopics = includeTopics;
         this.excludeTopics = excludeTopics;
         this.topicMetricsFromConfig = topicMetricsFromConfig;
@@ -64,60 +63,71 @@ public class TopicMetricProcessor implements Runnable {
         List<Metric> topicMetricList = Lists.newArrayList();
 
         try {
-            String response = Utility.getStringResponseFromUrl(httpClient, namespace, serviceBusRootUri, plainSasKeyName, plainSasKey, endpoint);
-            Feed topicFeed = (Feed) xStream.fromXML(response);
-            List<TopicDescription> allElements = topicFeed.listTopics();
 
-            Collection<TopicDescription> filteredTopics = null;
+            PagedIterable<SBTopicInner> topicIterator = serviceBusManagementClient.getTopics().listByNamespace(resourceGroup, namespace);
 
+            Map<String, String> topicsWithSBId = Flux.fromIterable(topicIterator)
+                    .collectMap(topicInner -> topicInner.name(),
+                            topicInner -> topicInner.id()).block();
+
+            if(topicsWithSBId == null || topicsWithSBId.size() <= 0) {
+                logger.info("Could not find topics in resource group [{}] namespace [{}]", resourceGroup, namespace);
+                logger.info("Phaser arrived for Topic metric processor for server {}", displayName);
+                phaser.arriveAndDeregister();
+                return;
+            }
+
+            Set<String> allTopicNames = topicsWithSBId.keySet();
+            String serviceBusResourceId = getServiceBusResourceId(topicsWithSBId);
+
+            Set<String> filteredTopics;
             if ((includeTopics == null || includeTopics.isEmpty()) && (excludeTopics == null || excludeTopics.isEmpty())) {
-                filteredTopics = allElements;
+                filteredTopics = allTopicNames;
             } else if (includeTopics != null && !includeTopics.isEmpty()) {
-                filteredTopics = Collections2.filter(allElements, new IncludePatternPredicate(includeTopics));
+                filteredTopics = Sets.filter(allTopicNames, new IncludePatternPredicate(includeTopics));
             } else if (excludeTopics != null && !excludeTopics.isEmpty()) {
-                filteredTopics = Collections2.filter(allElements, new ExcludePatternPredicate(excludeTopics));
+                filteredTopics = Sets.filter(allTopicNames, new ExcludePatternPredicate(excludeTopics));
             } else {
                 //Fail safe
-                filteredTopics = new ArrayList<>();
+                filteredTopics = Sets.newHashSet();
             }
-            logger.debug("Filtered topics are [{}]",filteredTopics.stream().map(topicDesc -> topicDesc.getTitle()).collect(Collectors.joining(",")));
+            logger.info("Filtered Topics are [{}]", filteredTopics.stream().collect(Collectors.joining(",")));
 
-            for (TopicDescription topicInfo : filteredTopics) {
+            for(String topicName : filteredTopics) {
+                MetricsQueryOptions metricsQueryOptions = new MetricsQueryOptions();
+                metricsQueryOptions.setFilter(String.format("EntityName eq '%s'", topicName));
+                OffsetDateTime endTime = OffsetDateTime.now(ZoneId.of("UTC"));
+                OffsetDateTime startTime = endTime.minusMinutes(1);
+                QueryTimeInterval queryTimeInterval = new QueryTimeInterval(startTime, endTime);
+                metricsQueryOptions.setTimeInterval(queryTimeInterval);
+                metricsQueryOptions.setAggregations(AggregationType.AVERAGE);
+
+                List<String> allMetrics = getAllMetricNames();
+                MetricsQueryResult result = metricsQueryAsyncClient.queryResourceWithResponse(serviceBusResourceId, allMetrics, metricsQueryOptions).block().getValue();
+                List<MetricResult> metrics = result.getMetrics();
 
                 Map<String, String> topicMetrics = new HashMap<>();
+                for(MetricResult metricResult : metrics) {
+                    String metricName = metricResult.getMetricName();
+                    Double metricValue = metricResult.getTimeSeries().stream().findFirst().get().getValues().stream().findFirst().get().getAverage();
+                    topicMetrics.put(metricName, String.valueOf(metricValue));
+                }
 
-                CountDetails countDetails = topicInfo.getCountDetails();
-
-                Long activeMessageCount = countDetails.getActiveMessageCount();
-                topicMetrics.put("ActiveMessageCount", String.valueOf(activeMessageCount));
-
-                Long deadLetterMessageCount = countDetails.getDeadLetterMessageCount();
-                topicMetrics.put("DeadLetterMessageCount", String.valueOf(deadLetterMessageCount));
-
-                Long scheduledMessageCount = countDetails.getScheduledMessageCount();
-                topicMetrics.put("ScheduledMessageCount", String.valueOf(scheduledMessageCount));
-
-                Long transferDeadLetterMessageCount = countDetails.getTransferDeadLetterMessageCount();
-                topicMetrics.put("TransferDeadLetterMessageCount", String.valueOf(transferDeadLetterMessageCount));
-
-                Long transferMessageCount = countDetails.getTransferMessageCount();
+                SBTopicInner sbTopicInner = serviceBusManagementClient.getTopics().get(resourceGroup, namespace, topicName);
+                Long transferMessageCount = sbTopicInner.countDetails().transferMessageCount();
                 topicMetrics.put("TransferMessageCount", String.valueOf(transferMessageCount));
 
-                Long maxSizeInMegabytes = topicInfo.getMaxSizeInMegabytes();
+                Long transferDeadLetterMessageCount = sbTopicInner.countDetails().transferDeadLetterMessageCount();
+                topicMetrics.put("TransferDeadLetterMessageCount", String.valueOf(transferDeadLetterMessageCount));
+
+                Integer maxSizeInMegabytes = sbTopicInner.maxSizeInMegabytes();
                 topicMetrics.put("MaxSizeInMegabytes", String.valueOf(maxSizeInMegabytes));
 
-                Long sizeInBytes = topicInfo.getSizeInBytes();
-                topicMetrics.put("SizeInBytes", String.valueOf(sizeInBytes));
-
-                String status = topicInfo.getStatus();
+                String status = sbTopicInner.status().toString();
                 topicMetrics.put("Status", status);
 
-                String availabilityStatus = topicInfo.getEntityAvailabilityStatus();
-                topicMetrics.put("EntityAvailabilityStatus", availabilityStatus);
-
-                processTopicMetrics(topicMetrics, topicMetricList, topicInfo.getTitle());
+                processTopicMetrics(topicMetrics, topicMetricList, topicName);
             }
-
         } catch (Exception e) {
             logger.error("Error occurred while performing TopicMetricProcessor task", e);
         } finally {
@@ -125,6 +135,16 @@ public class TopicMetricProcessor implements Runnable {
             logger.info("Phaser arrived for Topic metric processor for server {}", displayName);
             phaser.arriveAndDeregister();
         }
+    }
+
+    private List<String> getAllMetricNames() {
+        List<String> metricNames = topicMetricsFromConfig.stream().filter(topicMetric -> !Boolean.valueOf((String)topicMetric.get("fromTopic"))).map(topicMetric -> (String)topicMetric.get("name")).collect(Collectors.toList());
+        return metricNames;
+    }
+
+    private String getServiceBusResourceId(Map<String, String> topicWithSBId) {
+        String topicId = topicWithSBId.values().stream().findFirst().get();
+        return topicId.substring(0, topicId.indexOf("/topics"));
     }
 
     public void processTopicMetrics(Map<String, String> topicMetrics, List<Metric> topicMetricList, String topicName) {
