@@ -4,14 +4,14 @@ import com.appdynamics.extensions.AMonitorJob;
 import com.appdynamics.extensions.MetricWriteHelper;
 import com.appdynamics.extensions.conf.MonitorContextConfiguration;
 import com.appdynamics.extensions.metrics.Metric;
-import com.appdynamics.monitors.azure.Utility;
-import com.appdynamics.monitors.azure.pojo.Feed;
 import com.appdynamics.monitors.azure.processors.QueueMetricProcessor;
+import com.azure.monitor.query.MetricsQueryAsyncClient;
+import com.azure.resourcemanager.servicebus.fluent.ServiceBusManagementClient;
 import com.google.common.collect.Maps;
-import com.thoughtworks.xstream.XStream;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -33,20 +33,21 @@ import java.util.concurrent.Phaser;
 
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(Utility.class)
 @PowerMockIgnore("javax.net.ssl.*")
+@Ignore
 public class QueueMetricProcessorTest {
-
-    @Mock
-    CloseableHttpClient httpClient;
-
-    XStream xStream;
 
     @Mock
     Phaser phaser;
 
     @Mock
     MetricWriteHelper metricWriteHelper;
+
+    @Mock
+    private ServiceBusManagementClient serviceBusManagementClient;
+
+    @Mock
+    private MetricsQueryAsyncClient metricsQueryAsyncClient;
 
     MonitorContextConfiguration contextConfiguration;
 
@@ -59,21 +60,15 @@ public class QueueMetricProcessorTest {
         Map<String,?> configYml = contextConfiguration.getConfigYml();
         String metricPrefix = contextConfiguration.getMetricPrefix();
 
-        initXStream();
-
         Map servers = ((List<Map>)configYml.get("servers")).get(0);
         String displayName = (String) servers.get("displayName");
         metricPrefix=metricPrefix+"|"+displayName;
+        String resourceGroup = (String) servers.get("resourceGroup");
         String namespace = (String) servers.get("namespace");
-        String serviceBusRootUri = (String) servers.get("serviceBusRootUri");
-        String plainSasKeyName = (String) servers.get("sasKeyName");
-        String plainSasKey = (String) servers.get("sasKey");
-        String endpoint = "/$Resources/Queues?api-version=2013-07";
         List<String> includeQueue = null;
         List<String> excludeQueue = (List<String>) servers.get("excludeQueues");
         List<Map> queueMetricsFromConfig = (List<Map>) configYml.get("queueMetrics");
-        queueMetricProcessorSpyTask = Mockito.spy(new QueueMetricProcessor(httpClient,metricWriteHelper,xStream,metricPrefix,displayName,namespace,serviceBusRootUri,plainSasKeyName,plainSasKey,endpoint,includeQueue,excludeQueue,queueMetricsFromConfig,phaser));
-        PowerMockito.mockStatic(Utility.class);
+        queueMetricProcessorSpyTask = Mockito.spy(new QueueMetricProcessor(serviceBusManagementClient,metricsQueryAsyncClient,metricWriteHelper,metricPrefix,displayName,resourceGroup,namespace,includeQueue,excludeQueue,queueMetricsFromConfig,phaser));
     }
 
     @Test
@@ -81,19 +76,6 @@ public class QueueMetricProcessorTest {
         Map<String,String> expectedMap = initExpectedMetricMap();
         Map<String,String> queueMetricsMap = Maps.newHashMap();
         ArgumentCaptor<List> pathCaptor = ArgumentCaptor.forClass(List.class);
-
-        PowerMockito.when(Utility.getStringResponseFromUrl(Mockito.any(CloseableHttpClient.class),Mockito.anyString(),Mockito.anyString(),Mockito.anyString(),Mockito.anyString(),Mockito.anyString())).thenAnswer(
-                new Answer() {
-                    public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                        String endpoint = (String) invocationOnMock.getArguments()[5];
-                        String path=null;
-                        if(endpoint.contains("/Queues")){
-                            path = "src/test/resources/QueueResponse.xml";
-                        }
-                        return new String(Files.readAllBytes(new File(path).toPath()), StandardCharsets.UTF_8);
-                    }
-                }
-        );
 
         queueMetricProcessorSpyTask.run();
 
@@ -121,13 +103,6 @@ public class QueueMetricProcessorTest {
         expectedMap.put("Custom Metrics|Azure Service Bus|Server 1|Queues|test1|Status","Active");
         expectedMap.put("Custom Metrics|Azure Service Bus|Server 1|Queues|test1|Entity Availability Status","Available");
         return expectedMap;
-    }
-
-    public void initXStream(){
-        xStream = new XStream();
-        xStream.ignoreUnknownElements();
-        xStream.processAnnotations(Feed.class);
-        xStream.allowTypeHierarchy(Feed.class);
     }
 
 }

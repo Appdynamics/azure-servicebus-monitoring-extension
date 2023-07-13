@@ -5,16 +5,18 @@ import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.appdynamics.extensions.metrics.Metric;
 import com.appdynamics.monitors.azure.ExcludePatternPredicate;
 import com.appdynamics.monitors.azure.IncludePatternPredicate;
-import com.appdynamics.monitors.azure.Utility;
-import com.appdynamics.monitors.azure.pojo.CountDetails;
-import com.appdynamics.monitors.azure.pojo.Feed;
-import com.appdynamics.monitors.azure.pojo.QueueDescription;
-import com.google.common.collect.Collections2;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.monitor.query.MetricsQueryAsyncClient;
+import com.azure.monitor.query.models.*;
+import com.azure.resourcemanager.servicebus.fluent.ServiceBusManagementClient;
+import com.azure.resourcemanager.servicebus.fluent.models.SBQueueInner;
 import com.google.common.collect.Lists;
-import com.thoughtworks.xstream.XStream;
-import org.apache.http.impl.client.CloseableHttpClient;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
+import reactor.core.publisher.Flux;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Phaser;
 import java.util.stream.Collectors;
@@ -25,33 +27,30 @@ public class QueueMetricProcessor implements Runnable {
 
     private static final Logger logger = ExtensionsLoggerFactory.getLogger(QueueMetricProcessor.class);
 
-    private CloseableHttpClient httpClient;
+    private ServiceBusManagementClient serviceBusManagementClient;
+
+    private MetricsQueryAsyncClient metricsQueryAsyncClient;
     private MetricWriteHelper metricWriteHelper;
-    private XStream xStream;
     private String metricPrefix;
     private String displayName;
+
+    private String resourceGroup;
+
     private String namespace;
-    private String serviceBusRootUri;
-    private String plainSasKeyName;
-    private String plainSasKey;
-    private String endpoint;
     private List<String> includeQueues;
     private List<String> excludeQueues;
     private List<Map> queueMetricsFromConfig;
     private Phaser phaser;
 
 
-    public QueueMetricProcessor(CloseableHttpClient httpClient, MetricWriteHelper metricWriteHelper, XStream xStream, String metricPrefix, String displayName, String namespace, String serviceBusRootUri, String plainSasKeyName, String plainSasKey, String endpoint, List<String> includeQueues, List<String> excludeQueues, List<Map> queueMetricsFromConfig, Phaser phaser) {
-        this.httpClient = httpClient;
+    public QueueMetricProcessor(ServiceBusManagementClient serviceBusManagementClient, MetricsQueryAsyncClient metricsQueryAsyncClient, MetricWriteHelper metricWriteHelper, String metricPrefix, String displayName, String resourceGroup, String namespace, List<String> includeQueues, List<String> excludeQueues, List<Map> queueMetricsFromConfig, Phaser phaser) {
+        this.serviceBusManagementClient = serviceBusManagementClient;
+        this.metricsQueryAsyncClient = metricsQueryAsyncClient;
         this.metricWriteHelper = metricWriteHelper;
-        this.xStream = xStream;
         this.metricPrefix = metricPrefix;
         this.displayName = displayName;
+        this.resourceGroup = resourceGroup;
         this.namespace = namespace;
-        this.serviceBusRootUri = serviceBusRootUri;
-        this.plainSasKeyName = plainSasKeyName;
-        this.plainSasKey = plainSasKey;
-        this.endpoint = endpoint;
         this.includeQueues = includeQueues;
         this.excludeQueues = excludeQueues;
         this.queueMetricsFromConfig = queueMetricsFromConfig;
@@ -64,64 +63,76 @@ public class QueueMetricProcessor implements Runnable {
 
         List<Metric> queueMetricList = Lists.newArrayList();
         try {
-            String response = Utility.getStringResponseFromUrl(httpClient, namespace, serviceBusRootUri, plainSasKeyName, plainSasKey, endpoint);
-            Feed queueFeed = (Feed) xStream.fromXML(response);
-            List<QueueDescription> allElements = queueFeed.listQueues();
 
-            Collection<QueueDescription> filteredQueues;
+            PagedIterable<SBQueueInner> queuesIterator = serviceBusManagementClient.getQueues().listByNamespace(resourceGroup, namespace);
+
+            Map<String, String> queuesWithSBId = Flux.fromIterable(queuesIterator)
+                    .collectMap(queueInner -> queueInner.name(),
+                            queueInner -> queueInner.id()).block();
+
+            if(queuesWithSBId == null || queuesWithSBId.size() <= 0) {
+                logger.info("Could not find queues in resource group [{}] namespace [{}]", resourceGroup, namespace);
+                logger.info("Phaser arrived for Queue metric processor for server {}", displayName);
+                phaser.arriveAndDeregister();
+                return;
+            }
+
+            Set<String> allQueueNames = queuesWithSBId.keySet();
+            String serviceBusResourceId = getServiceBusResourceId(queuesWithSBId);
+
+            Set<String> filteredQueues;
             if ((includeQueues == null || includeQueues.isEmpty()) && (excludeQueues == null || excludeQueues.isEmpty())) {
-                filteredQueues = allElements;
+                filteredQueues = allQueueNames;
             } else if (includeQueues != null && !includeQueues.isEmpty()) {
-                filteredQueues = Collections2.filter(allElements, new IncludePatternPredicate(includeQueues));
+                filteredQueues = Sets.filter(allQueueNames, new IncludePatternPredicate(includeQueues));
             } else if (excludeQueues != null && !excludeQueues.isEmpty()) {
-                filteredQueues = Collections2.filter(allElements, new ExcludePatternPredicate(excludeQueues));
+                filteredQueues = Sets.filter(allQueueNames, new ExcludePatternPredicate(excludeQueues));
             } else {
                 //Fail safe
-                filteredQueues = new ArrayList<>();
+                filteredQueues = Sets.newHashSet();
             }
-            logger.debug("Filtered Queues are [{}]", filteredQueues.stream().map(x -> x.getTitle()).collect(Collectors.joining(",")));
+            logger.info("Filtered Queues are [{}]", filteredQueues.stream().collect(Collectors.joining(",")));
 
-            for (QueueDescription queueInfo : filteredQueues) {
+
+            for(String queueName : filteredQueues) {
+                MetricsQueryOptions metricsQueryOptions = new MetricsQueryOptions();
+                metricsQueryOptions.setFilter(String.format("EntityName eq '%s'", queueName));
+                OffsetDateTime endTime = OffsetDateTime.now(ZoneId.of("UTC"));
+                OffsetDateTime startTime = endTime.minusMinutes(1);
+                QueryTimeInterval queryTimeInterval = new QueryTimeInterval(startTime, endTime);
+                metricsQueryOptions.setTimeInterval(queryTimeInterval);
+                metricsQueryOptions.setAggregations(AggregationType.AVERAGE);
+
+                List<String> allMetrics = getAllMetricNames();
+                MetricsQueryResult result = metricsQueryAsyncClient.queryResourceWithResponse(serviceBusResourceId, allMetrics, metricsQueryOptions).block().getValue();
+                List<MetricResult> metrics = result.getMetrics();
+
                 Map<String, String> queueMetrics = new HashMap<>();
+                for(MetricResult metricResult : metrics) {
+                    String metricName = metricResult.getMetricName();
+                    Long metricValue = metricResult.getTimeSeries().stream().findFirst().get().getValues().stream().findFirst().get().getAverage().longValue();
+                    queueMetrics.put(metricName, String.valueOf(metricValue));
+                }
 
-                CountDetails countDetails = queueInfo.getCountDetails();
+                SBQueueInner sbQueueInner = serviceBusManagementClient.getQueues().get(resourceGroup, namespace, queueName);
 
-                Long activeMessageCount = countDetails.getActiveMessageCount();
-                queueMetrics.put("ActiveMessageCount", String.valueOf(activeMessageCount));
-
-                Long deadLetterMessageCount = countDetails.getDeadLetterMessageCount();
-                queueMetrics.put("DeadLetterMessageCount", String.valueOf(deadLetterMessageCount));
-
-                Long scheduledMessageCount = countDetails.getScheduledMessageCount();
-                queueMetrics.put("ScheduledMessageCount", String.valueOf(scheduledMessageCount));
-
-                Long transferDeadLetterMessageCount = countDetails.getTransferDeadLetterMessageCount();
-                queueMetrics.put("TransferDeadLetterMessageCount", String.valueOf(transferDeadLetterMessageCount));
-
-                Long transferMessageCount = countDetails.getTransferMessageCount();
+                Long transferMessageCount = sbQueueInner.countDetails().transferMessageCount();
                 queueMetrics.put("TransferMessageCount", String.valueOf(transferMessageCount));
 
-                Long maxDeliveryCount = queueInfo.getMaxDeliveryCount();
+                Long transferDeadLetterMessageCount = sbQueueInner.countDetails().transferDeadLetterMessageCount();
+                queueMetrics.put("TransferDeadLetterMessageCount", String.valueOf(transferDeadLetterMessageCount));
+
+                Integer maxDeliveryCount = sbQueueInner.maxDeliveryCount();
                 queueMetrics.put("MaxDeliveryCount", String.valueOf(maxDeliveryCount));
 
-                Long maxSizeInMegabytes = queueInfo.getMaxSizeInMegabytes();
+                Integer maxSizeInMegabytes = sbQueueInner.maxSizeInMegabytes();
                 queueMetrics.put("MaxSizeInMegabytes", String.valueOf(maxSizeInMegabytes));
 
-                Long messageCount = queueInfo.getMessageCount();
-                queueMetrics.put("MessageCount", String.valueOf(messageCount));
-
-                Long sizeInBytes = queueInfo.getSizeInBytes();
-                queueMetrics.put("SizeInBytes", String.valueOf(sizeInBytes));
-
-                String status = queueInfo.getStatus();
+                String status = sbQueueInner.status().toString();
                 queueMetrics.put("Status", status);
 
-                String availabilityStatus = queueInfo.getEntityAvailabilityStatus();
-                queueMetrics.put("EntityAvailabilityStatus", availabilityStatus);
-
-                processQueueMetrics(queueMetrics, queueMetricList, queueInfo.getTitle());
+                processQueueMetrics(queueMetrics, queueMetricList, queueName);
             }
-
         } catch (Exception e) {
             logger.error("Error occurred while performing QueueMetricProcessor task", e);
         } finally {
@@ -129,6 +140,16 @@ public class QueueMetricProcessor implements Runnable {
             logger.info("Phaser arrived for Queue metric processor for server {}", displayName);
             phaser.arriveAndDeregister();
         }
+    }
+
+    private List<String> getAllMetricNames() {
+        List<String> metricNames = queueMetricsFromConfig.stream().filter(queueMetric -> !Boolean.valueOf((String)queueMetric.get("fromQueue"))).map(queueMetric -> (String) queueMetric.get("name")).collect(Collectors.toList());
+        return metricNames;
+    }
+
+    private String getServiceBusResourceId(Map<String, String> queuesWithSBId) {
+        String queueId = queuesWithSBId.values().stream().findFirst().get();
+        return queueId.substring(0, queueId.indexOf("/queues"));
     }
 
     public void processQueueMetrics(Map<String, String> queueMetrics, List<Metric> queueMetricList, String queueName) {

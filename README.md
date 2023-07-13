@@ -7,8 +7,8 @@ Windows Azure is an Internet-scale computing and services platform hosted in Mic
 
 ## Prerequisites
 1. Before the extension is installed, the prerequisites mentioned [here](https://community.appdynamics.com/t5/Knowledge-Base/Extensions-Prerequisites-Guide/ta-p/35213) need to be met. Please do not proceed with the extension installation if the specified prerequisites are not met
-2. Extension uses SAS based authentication. For more details please refer [here](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-sas).
-3. The extension needs to be able to connect to Azure server in order to collect and send metrics. To do this, you will have to establish a successful connection in between the extension and the product.
+2. Extension uses service principal based authentication. For more details please refer [here](https://learn.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal).
+3. The extension needs to be able to connect to Azure services in order to collect and send metrics. To do this, you will have to establish a successful connection in between the extension and the product.
 
 ## Installation
 1. Run "mvn clean install" from "AzureServiceBusMonitorRepo"
@@ -39,22 +39,27 @@ Following are the details on how to configure Azure server
 ```
 servers:
   - displayName: "Server 1"
-    namespace: "appdx-dev"
+    namespace: "CloudCollectorNS"
+    resourceGroup: "cloud-collectors-rg"
+    tenantId: ""
+    subscriptionId: ""
+    clientId: ""
+    clientSecret: ""
+
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName:
-    sasKey:
-    #encryptedSasKeyName: bCseRIOOmmpy1ZN2HuAKH/1GIN+/cXrJ4UnYAG4DQPU=
-    #encryptedSasKey:
-    serviceBusRootUri: ".servicebus.windows.net"
+    #encryptedTenantId: ""
+    #encryptedSubscriptionId: ""
+    #encryptedClientId:
+    #encryptedClientSecret:
     # Provide either include or exclude configuration.
     # If include and exclude are provided, will consider only include.
     # If include and exclude are not provided, will fetch everything.
     # Define queues to include. supports regex
-    includeQueues: []
+    includeQueues: [".*"]
     # Define queues to exclude. supports regex
     excludeQueues: []
     # Define topics to include. supports regex
-    includeTopics: []
+    includeTopics: [".*"]
     # Define topics to exclude. supports regex
     excludeTopics: []
 ```
@@ -62,41 +67,51 @@ Multiple servers can be configured like below
 ```
 servers:
   - displayName: "Server 1"
-    namespace: "appdx-dev"
+    namespace: "CloudCollectorNS-1"
+    resourceGroup: "cloud-collectors-rg-1"
+    tenantId: ""
+    subscriptionId: ""
+    clientId: ""
+    clientSecret: ""
+
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName:
-    sasKey:
-    #encryptedSasKeyName: bCseRIOOmmpy1ZN2HuAKH/1GIN+/cXrJ4UnYAG4DQPU=
-    #encryptedSasKey:
-    serviceBusRootUri: ".servicebus.windows.net"
+    #encryptedTenantId: ""
+    #encryptedSubscriptionId: ""
+    #encryptedClientId:
+    #encryptedClientSecret:
     # Provide either include or exclude configuration.
     # If include and exclude are provided, will consider only include.
     # If include and exclude are not provided, will fetch everything.
     # Define queues to include. supports regex
-    includeQueues: []
+    includeQueues: [".*"]
     # Define queues to exclude. supports regex
     excludeQueues: []
     # Define topics to include. supports regex
-    includeTopics: []
+    includeTopics: [".*"]
     # Define topics to exclude. supports regex
     excludeTopics: []
   - displayName: "Server 2"
-    namespace: "appdx-dev-1"
+    namespace: "CloudCollectorNS-2"
+    resourceGroup: "cloud-collectors-rg-2"
+    tenantId: ""
+    subscriptionId: ""
+    clientId: ""
+    clientSecret: ""
+
     # Provide sasKeyName,sasKey or encryptedSasKeyName,encryptedSasKey
-    sasKeyName:
-    sasKey:
-    #encryptedSasKeyName: bCseRIOOmmpy1ZN2HuAKH/1GIN+/cXrJ4UnYAG4DQPU=
-    #encryptedSasKey:
-    serviceBusRootUri: ".servicebus.windows.net"
+    #encryptedTenantId: ""
+    #encryptedSubscriptionId: ""
+    #encryptedClientId:
+    #encryptedClientSecret:
     # Provide either include or exclude configuration.
     # If include and exclude are provided, will consider only include.
     # If include and exclude are not provided, will fetch everything.
     # Define queues to include. supports regex
-    includeQueues: []
+    includeQueues: [".*"]
     # Define queues to exclude. supports regex
     excludeQueues: []
     # Define topics to include. supports regex
-    includeTopics: []
+    includeTopics: [".*"]
     # Define topics to exclude. supports regex
     excludeTopics: []
 ```
@@ -121,27 +136,86 @@ More details around this can be found [here](https://community.appdynamics.com/t
 
 ```
 queueMetrics:
-  - name: "ActiveMessageCount"
+  - name: "ActiveMessages"
     alias: "Active Message Count"
     multiplier: "1"
     aggregationType: "AVERAGE"
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
-  - name: "DeadLetterMessageCount"
+    fromQueue: "false"
+  - name: "DeadletteredMessages"
     alias: "DeadLetter Message Count"
     multiplier: "1"
     aggregationType: "AVERAGE"
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
-  - name: "ScheduledMessageCount"
+    fromQueue: "false"
+  - name: "ScheduledMessages"
     alias: "Scheduled Message Count"
     multiplier: "1"
     aggregationType: "AVERAGE"
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
+    fromQueue: "false"
+  - name: "Messages"
+    alias: "Message Count"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromQueue: "false"
+  - name: "Size"
+    alias: "Size In Bytes"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromQueue: "false"
+  - name: "IncomingRequests"
+    alias: "Incoming Requests"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
+  - name: "SuccessfulRequests"
+    alias: "Successful Requests"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
+  - name: "ServerErrors"
+    alias: "Server Errors"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
+  - name: "UserErrors"
+    alias: "User Errors"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
+  - name: "ThrottledRequests"
+    alias: "Throttled Requests"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
   - name: "TransferMessageCount"
     alias: "Transfer Message Count"
     multiplier: "1"
@@ -149,6 +223,7 @@ queueMetrics:
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
+    fromQueue: "true"
   - name: "TransferDeadLetterMessageCount"
     alias: "Transfer DeadLetter Message Count"
     multiplier: "1"
@@ -156,6 +231,7 @@ queueMetrics:
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
+    fromQueue: "true"
   - name: "MaxDeliveryCount"
     alias: "Max Delivery Count"
     multiplier: "1"
@@ -163,6 +239,7 @@ queueMetrics:
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
+    fromQueue: "true"
   - name: "MaxSizeInMegabytes"
     alias: "Max Size In Megabytes"
     multiplier: "1"
@@ -170,20 +247,7 @@ queueMetrics:
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
-  - name: "MessageCount"
-    alias: "Message Count"
-    multiplier: "1"
-    aggregationType: "AVERAGE"
-    timeRollUpType: "AVERAGE"
-    clusterRollUpType: "INDIVIDUAL"
-    delta: "false"
-  - name: "SizeInBytes"
-    alias: "Size In Bytes"
-    multiplier: "1"
-    aggregationType: "AVERAGE"
-    timeRollUpType: "AVERAGE"
-    clusterRollUpType: "INDIVIDUAL"
-    delta: "false"
+    fromQueue: "true"
   - name: "Status"
     alias: "Status"
     multiplier: "1"
@@ -191,46 +255,91 @@ queueMetrics:
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
+    fromQueue: "true"
     convert:
-       Active: "1"
-       Disabled: "2"
-       Restoring: "3"
-       SendDisabled: "4"
-       ReceiveDisabled: "5"
-  - name: "EntityAvailabilityStatus"
-    alias: "Entity Availability Status"
-    multiplier: "1"
-    aggregationType: "AVERAGE"
-    timeRollUpType: "AVERAGE"
-    clusterRollUpType: "INDIVIDUAL"
-    delta: "false"
-    convert:
-       Unknown: "1"
-       Available: "2"
-       Limited: "3"
-       Restoring: "4"
+      Active: "1"
+      Disabled: "2"
+      Restoring: "3"
+      SendDisabled: "4"
+      ReceiveDisabled: "5"
+      Creating: "6"
+      Deleting: "7"
+      Renaming: "8"
+      Unknown: "9"
+
 topicMetrics:
-  - name: "ActiveMessageCount"
+  - name: "ActiveMessages"
     alias: "Active Message Count"
     multiplier: "1"
     aggregationType: "AVERAGE"
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
-  - name: "DeadLetterMessageCount"
+    fromTopic: "false"
+  - name: "DeadletteredMessages"
     alias: "DeadLetter Message Count"
     multiplier: "1"
     aggregationType: "AVERAGE"
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
-  - name: "ScheduledMessageCount"
+    fromTopic: "false"
+  - name: "ScheduledMessages"
     alias: "Scheduled Message Count"
     multiplier: "1"
     aggregationType: "AVERAGE"
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
+    fromTopic: "false"
+  - name: "Size"
+    alias: "Size In Bytes"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
+  - name: "IncomingRequests"
+    alias: "Incoming Requests"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
+  - name: "SuccessfulRequests"
+    alias: "Successful Requests"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
+  - name: "ServerErrors"
+    alias: "Server Errors"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
+  - name: "UserErrors"
+    alias: "User Errors"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
+  - name: "ThrottledRequests"
+    alias: "Throttled Requests"
+    multiplier: "1"
+    aggregationType: "AVERAGE"
+    timeRollUpType: "AVERAGE"
+    clusterRollUpType: "INDIVIDUAL"
+    delta: "false"
+    fromTopic: "false"
   - name: "TransferMessageCount"
     alias: "Transfer Message Count"
     multiplier: "1"
@@ -238,6 +347,7 @@ topicMetrics:
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
+    fromTopic: "true"
   - name: "TransferDeadLetterMessageCount"
     alias: "Transfer DeadLetter Message Count"
     multiplier: "1"
@@ -245,6 +355,7 @@ topicMetrics:
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
+    fromTopic: "true"
   - name: "MaxSizeInMegabytes"
     alias: "Max Size In Megabytes"
     multiplier: "1"
@@ -252,13 +363,7 @@ topicMetrics:
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
-  - name: "SizeInBytes"
-    alias: "Size In Bytes"
-    multiplier: "1"
-    aggregationType: "AVERAGE"
-    timeRollUpType: "AVERAGE"
-    clusterRollUpType: "INDIVIDUAL"
-    delta: "false"
+    fromTopic: "true"
   - name: "Status"
     alias: "Status"
     multiplier: "1"
@@ -266,24 +371,17 @@ topicMetrics:
     timeRollUpType: "AVERAGE"
     clusterRollUpType: "INDIVIDUAL"
     delta: "false"
+    fromTopic: "true"
     convert:
-       Active: "1"
-       Disabled: "2"
-       Restoring: "3"
-       SendDisabled: "4"
-       ReceiveDisabled: "5"
-  - name: "EntityAvailabilityStatus"
-    alias: "Entity Availability Status"
-    multiplier: "1"
-    aggregationType: "AVERAGE"
-    timeRollUpType: "AVERAGE"
-    clusterRollUpType: "INDIVIDUAL"
-    delta: "false"
-    convert:
-       Unknown: "1"
-       Available: "2"
-       Limited: "3"
-       Restoring: "4"
+      Active: "1"
+      Disabled: "2"
+      Restoring: "3"
+      SendDisabled: "4"
+      ReceiveDisabled: "5"
+      Creating: "6"
+      Deleting: "7"
+      Renaming: "8"
+      Unknown: "9"
 ```
 
 #### Yml Validation
@@ -296,31 +394,39 @@ The following metrics are reported.
 
 | Metrics|
 |---------------- |
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/ActiveMessageCount|
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/DeadLetterMessageCount|
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/ScheduledMessageCount|
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/TransferMessageCount|
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/TransferDeadLetterMessageCount|
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/MaxDeliveryCount|
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/MaxSizeInMegabytes|
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/MessageCount|
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/SizeInBytes|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Active Message Count|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/DeadLetter Message Count|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Scheduled Message Count|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Transfer Message Count|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Transfer DeadLetter Message Count|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Max Delivery Count|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Max Size In Megabytes|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Message Count|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Size In Bytes|
 |Azure Service Bus/{ServerName}/Queues/{QueueName}/Status|
-|Azure Service Bus/{ServerName}/Queues/{QueueName}/AvailabilityStatus|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Incoming Requests|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Successful Requests|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Server Errors|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/User Errors|
+|Azure Service Bus/{ServerName}/Queues/{QueueName}/Throttled Requests|
 
 ### Topics
 
 | Metrics|
 |---------------- |
-|Azure Service Bus/{ServerName}/Topics/{TopicName}/ActiveMessageCount|
-|Azure Service Bus/{ServerName}/Topics/{TopicName}/DeadLetterMessageCount|
-|Azure Service Bus/{ServerName}/Topics/{TopicName}/ScheduledMessageCount|
-|Azure Service Bus/{ServerName}/Topics/{TopicName}/TransferMessageCount|
-|Azure Service Bus/{ServerName}/Topics/{TopicName}/TransferDeadLetterMessageCount|
-|Azure Service Bus/{ServerName}/Topics/{TopicName}/MaxSizeInMegabytes|
-|Azure Service Bus/{ServerName}/Topics/{TopicName}/SizeInBytes|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Active Message Count|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/DeadLetter Message Count|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Scheduled Message Count|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Transfer Message Count|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Transfer DeadLetter Message Count|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Max Size In Megabytes|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Size In Bytes|
 |Azure Service Bus/{ServerName}/Topics/{TopicName}/Status|
-|Azure Service Bus/{ServerName}/Topics/{TopicName}/AvailabilityStatus|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Incoming Requests|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Successful Requests|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Server Errors|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/User Errors|
+|Azure Service Bus/{ServerName}/Topics/{TopicName}/Throttled Requests|
 
 ## Password encryption
 Please visit [this page](https://community.appdynamics.com/t5/Knowledge-Base/How-to-use-Password-Encryption-with-Extensions/ta-p/29397) to get detailed instructions on password encryption. The steps in this document will guide you through the whole process.
@@ -336,10 +442,10 @@ Always feel free to fork and contribute any changes directly here on [GitHub](ht
 
 
 ## Version
-|          Name            |  Version   |
-|--------------------------|------------|
-|Extension Version         |3.0.0       |
-|Last Update               |26/08/2021  |
-|ChangeList|[ChangeLog](https://github.com/Appdynamics/azure-servicebus-monitoring-extension/blob/master/CHANGES.md)|
+|          Name            | Version                                                                                                  |
+|--------------------------|----------------------------------------------------------------------------------------------------------|
+|Extension Version         | 4.0.0                                                                                                    |
+|Last Update               | 12 July 2023                                                                                             |
+|ChangeList| [ChangeLog](https://github.com/Appdynamics/azure-servicebus-monitoring-extension/blob/master/CHANGES.md) |
 
 **Note**: While extensions are maintained and supported by customers under the open-source licensing model, they interact with agents and Controllers that are subject to [AppDynamics’ maintenance and support policy](https://docs.appdynamics.com/latest/en/product-and-release-announcements/maintenance-support-for-software-versions). Some extensions have been tested with AppDynamics 4.5.13+ artifacts, but you are strongly recommended against using versions that are no longer supported.

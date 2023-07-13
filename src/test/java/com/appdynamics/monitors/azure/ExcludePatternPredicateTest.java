@@ -7,7 +7,6 @@
 
 package com.appdynamics.monitors.azure;
 
-import com.appdynamics.monitors.azure.pojo.Description;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
@@ -25,43 +24,40 @@ public class ExcludePatternPredicateTest {
     public void testExcludePatternPredicateExcludeAll() {
         excludePatternPredicate = new ExcludePatternPredicate(Lists.<String>newArrayList(".*"));
 
-        Description description = new Description();
-        description.setTitle("abc");
+        String name = "abc";
 
-        Assert.assertFalse(excludePatternPredicate.apply(description));
+        Assert.assertFalse(excludePatternPredicate.apply(name));
 
         String title = RandomStringUtils.randomAlphanumeric(5);
-        description.setTitle(title);
+        name = title;
 
-        Assert.assertFalse(excludePatternPredicate.apply(description));
+        Assert.assertFalse(excludePatternPredicate.apply(name));
     }
 
     @Test
     public void testExcludePatternPredicateExcludePatternStart() {
         excludePatternPredicate = new ExcludePatternPredicate(Lists.<String>newArrayList("abc.*"));
 
-        Description description = new Description();
-        description.setTitle("abc123");
+        String name = "abc123";
 
-        Assert.assertFalse(excludePatternPredicate.apply(description));
+        Assert.assertFalse(excludePatternPredicate.apply(name));
 
-        description.setTitle("xyz123");
+        name = "xyz123";
 
-        Assert.assertTrue(excludePatternPredicate.apply(description));
+        Assert.assertTrue(excludePatternPredicate.apply(name));
     }
 
     @Test
     public void testExcludePatternPredicateExcludePatternEnd() {
         excludePatternPredicate = new ExcludePatternPredicate(Lists.<String>newArrayList(".*abc"));
 
-        Description description = new Description();
-        description.setTitle("123abc");
+        String name = "123abc";
 
-        Assert.assertFalse(excludePatternPredicate.apply(description));
+        Assert.assertFalse(excludePatternPredicate.apply(name));
 
-        description.setTitle("123xyz");
+        name = "123xyz";
 
-        Assert.assertTrue(excludePatternPredicate.apply(description));
+        Assert.assertTrue(excludePatternPredicate.apply(name));
     }
 
 
