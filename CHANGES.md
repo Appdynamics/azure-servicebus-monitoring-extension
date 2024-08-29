@@ -1,5 +1,9 @@
 # Azure Servicebus Monitoring Extension CHANGELOG
 
+### Version 4.0.1
+* Update Azure libraries
+* Updated extension commons to 2.2.13
+
 ### Version 4.0.0
 * Update extension to use Azure metric API to report accurate metrics
 * Added support to collect additional metrics from Azure metric API
