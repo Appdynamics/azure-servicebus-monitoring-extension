@@ -11,7 +11,7 @@
 
     <groupId>com.appdynamics.extensions</groupId>
     <artifactId>azure-servicebus-monitoring-extension</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.1</version>
     <packaging>jar</packaging>
     <name>azure-servicebus-monitoring-extension</name>
     <url>http://maven.apache.org</url>
@@ -25,27 +25,18 @@
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-identity</artifactId>
-            <version>1.3.7</version>
+            <version>1.13.2</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.13.4</version>
-        </dependency>
-
         <dependency>
             <groupId>com.azure.resourcemanager</groupId>
             <artifactId>azure-resourcemanager-servicebus</artifactId>
-            <version>2.8.0</version>
+            <version>2.42.0</version>
         </dependency>
-
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-monitor-query</artifactId>
-            <version>1.0.5</version>
+            <version>1.5.1</version>
         </dependency>
-
         <dependency>
             <groupId>com.appdynamics</groupId>
             <artifactId>machineagent-repackaged</artifactId>
@@ -55,35 +46,25 @@
         <dependency>
             <groupId>com.appdynamics</groupId>
             <artifactId>appd-exts-commons</artifactId>
-            <version>2.2.4</version>
+            <version>2.2.13</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito</artifactId>
-            <version>1.6.3</version>
+            <version>1.4.7</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>1.5.6</version>
+            <version>1.4.7</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.21</version>
         </dependency>
     </dependencies>
     <build>

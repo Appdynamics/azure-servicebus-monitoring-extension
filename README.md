@@ -446,8 +446,8 @@ Always feel free to fork and contribute any changes directly here on [GitHub](ht
 ## Version
 |          Name            | Version                                                                                                  |
 |--------------------------|----------------------------------------------------------------------------------------------------------|
-|Extension Version         | 4.0.0                                                                                                    |
-|Last Update               | 12 July 2023                                                                                             |
+|Extension Version         | 4.0.1                                                                                                    |
+|Last Update               | 29 Aug 2024                                                                                              |
 |ChangeList| [ChangeLog](https://github.com/Appdynamics/azure-servicebus-monitoring-extension/blob/master/CHANGES.md) |
 
 **Note**: While extensions are maintained and supported by customers under the open-source licensing model, they interact with agents and Controllers that are subject to [AppDynamics’ maintenance and support policy](https://docs.appdynamics.com/latest/en/product-and-release-announcements/maintenance-support-for-software-versions). Some extensions have been tested with AppDynamics 4.5.13+ artifacts, but you are strongly recommended against using versions that are no longer supported.
